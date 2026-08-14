@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc && node copy-static.mjs && esbuild node_modules/qrcode/lib/browser.js --bundle --format=iife --global-name=QRCode --outfile=dist/qrcode.js",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
