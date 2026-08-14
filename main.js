@@ -8,6 +8,7 @@ import {
 const domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
   console.log(`This page is intended to be used on the ha.mr domain. You are currently on ${domain}.`);
+}
 
 var settings = {
   emoji: false,
