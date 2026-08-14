@@ -5,9 +5,13 @@ import {
   outputAlphabetEmoji
 } from "./alphabets.js";
 
-const domain = window.location.hostname;
+let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
   console.log(`This page is intended to be used on the ha.mr domain. You are currently on ${domain}.`);
+}
+const webPort = window.location.port;
+if (webPort && webPort !== "80" && webPort !== "443") {
+  domain += `:${webPort}`;
 }
 
 var settings = {
