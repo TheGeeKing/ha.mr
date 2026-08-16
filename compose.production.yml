@@ -1,0 +1,14 @@
+services:
+  app:
+    image: ghcr.io/thegeeking/ha.mr:latest
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
