@@ -4,27 +4,36 @@ import {
   outputAlphabetQR,
   outputAlphabetEmoji
 } from "./alphabets.js";
+import type { QRCodeErrorCorrectionLevel } from "qrcode";
 
-var settings = {
+type SettingName = "emoji" | "qr";
+
+function requiredElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Missing element: ${selector}`);
+  return element;
+}
+
+const settings: Record<SettingName, boolean> = {
   emoji: false,
   qr: false
 };
 
-const settingsElements = {
+const settingsElements: Record<SettingName, string> = {
   emoji: "#settings-emoji",
   qr: "#settings-qr"
 };
 
-for (const setting in settingsElements) {
-  const element = document.querySelector(settingsElements[setting]);
+for (const setting of Object.keys(settingsElements) as SettingName[]) {
+  const element = requiredElement<HTMLInputElement>(settingsElements[setting]);
   settings[setting] = element.checked;
-  element.addEventListener("change", (event) => {
+  element.addEventListener("change", () => {
     settings[setting] = element.checked;
     updateOutput();
   });
 }
 
-function countSymbols (string, alphabet) {
+function countSymbols (string: string, alphabet: string[]): number {
   let count = 0;
   while (string) {
     const symbol = alphabet.find(c => string.endsWith(c));
@@ -34,17 +43,19 @@ function countSymbols (string, alphabet) {
   return count;
 }
 
-const inputLinkElement = document.querySelector("#input-link");
-const outputLinkElement = document.querySelector("#output-link");
-const outputRatioElement = document.querySelector("#output-ratio");
-const queryWarningElement = document.querySelector("#query-warning");
+const inputLinkElement = requiredElement<HTMLInputElement>("#input-link");
+const outputLinkElement = requiredElement<HTMLAnchorElement>("#output-link");
+const outputRatioElement = requiredElement<HTMLElement>("#output-ratio");
+const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
 
-const qrCodeImage = document.querySelector("#qrcode");
-const qrCodeCorrectionLevelContainer = document.querySelector("#qr-correct-level-container");
-const qrCodeCorrectionLevelElement = document.querySelector("#qr-correct-level");
+const qrCodeImage = requiredElement<HTMLImageElement>("#qrcode");
+const qrCodeCorrectionLevelContainer = requiredElement<HTMLElement>("#qr-correct-level-container");
+const qrCodeCorrectionLevelElement = requiredElement<HTMLInputElement>("#qr-correct-level");
 qrCodeCorrectionLevelElement.addEventListener("change", updateOutput);
 
-function updateOutput () {
+const qrErrorLevels = ["L", "M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
+
+function updateOutput (): void {
   const input = inputLinkElement.value.trim();
   try {
     const alphabet = settings.emoji ? outputAlphabetEmoji : outputAlphabetASCII;
@@ -86,10 +97,10 @@ function updateOutput () {
     outputLinkElement.href = `http://ha.mr#${output}`;
     outputLinkElement.style.color = "";
     if (settings.qr) {
-      const errorCorrection = ["L", "M", "Q", "H"][qrCodeCorrectionLevelElement.value];
+      const errorCorrection = qrErrorLevels[Number(qrCodeCorrectionLevelElement.value)] ?? "M";
       qrCodeImage.style.display = "inline";
       qrCodeCorrectionLevelContainer.style.display = "inline";
-      let qrCodeLink = `HTTP://HA.MR/${compress(input, outputAlphabetQR)}`;
+      const qrCodeLink = `HTTP://HA.MR/${compress(input, outputAlphabetQR)}`;
       QRCode.toDataURL(qrCodeLink, {
         errorCorrectionLevel: errorCorrection,
         scale: 8
@@ -124,7 +135,7 @@ function updateOutput () {
 inputLinkElement.addEventListener("input", updateOutput);
 
 (() => {
-  let payload = null;
+  let payload: string | null = null;
   let alphabet = outputAlphabetASCII;
 
   // Get hash value of current address bar
@@ -156,8 +167,8 @@ inputLinkElement.addEventListener("input", updateOutput);
 
   updateOutput();
 
-  document.querySelector("#loader").style.opacity = 0;
-  document.querySelector("#content").style.opacity = 1;
-  document.querySelector("#content").style.pointerEvents = "auto";
+  requiredElement<HTMLElement>("#loader").style.opacity = "0";
+  requiredElement<HTMLElement>("#content").style.opacity = "1";
+  requiredElement<HTMLElement>("#content").style.pointerEvents = "auto";
 
 })();
