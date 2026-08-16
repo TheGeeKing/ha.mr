@@ -36,13 +36,20 @@ for (const [alphabetName, alphabet] of alphabets) {
 }
 
 test("encoding remains compatible with existing payloads", () => {
-  const url = "https://www.example.com";
+  const fixtures = [
+    ["https://www.example.com", "GUk6"],
+    ["https://en.wikipedia.org/wiki/TypeScript", ":2*#@PxR,~@K?'RI."],
+    ["https://example.photography/path", "[AuSmN6dOg"],
+    ["http://amazon.com/product?id=42", "vHsdk9@O[3&_uF"]
+  ];
 
-  assert.equal(compress(url, outputAlphabetASCII), "GUk6");
-  assert.equal(compress(url, outputAlphabetQR), "1L3I+");
-  assert.equal(compress(url, outputAlphabetEmoji), "♐📯");
+  for (const [url, payload] of fixtures) {
+    assert.equal(compress(url, outputAlphabetASCII), payload);
+    assert.equal(decompress(payload, outputAlphabetASCII), url);
+  }
 
-  assert.equal(decompress("GUk6", outputAlphabetASCII), url);
-  assert.equal(decompress("1L3I+", outputAlphabetQR), url);
-  assert.equal(decompress("♐📯", outputAlphabetEmoji), url);
+  assert.equal(compress(fixtures[0][0], outputAlphabetQR), "1L3I+");
+  assert.equal(compress(fixtures[0][0], outputAlphabetEmoji), "♐📯");
+  assert.equal(decompress("1L3I+", outputAlphabetQR), fixtures[0][0]);
+  assert.equal(decompress("♐📯", outputAlphabetEmoji), fixtures[0][0]);
 });

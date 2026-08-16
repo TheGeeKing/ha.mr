@@ -4,11 +4,12 @@
   "version": "1.0.1",
   "type": "module",
   "scripts": {
-    "build": "tsc && node copy-static.mjs && esbuild node_modules/qrcode/lib/browser.js --bundle --format=iife --global-name=QRCode --outfile=dist/qrcode.js",
+    "build": "npm run generate:dictionaries && tsc && node copy-static.mjs && esbuild node_modules/qrcode/lib/browser.js --bundle --format=iife --global-name=QRCode --outfile=dist/qrcode.js",
     "build:cli:bundle": "esbuild src/quickjs.ts --bundle --minify --platform=neutral --main-fields=module,main --format=esm --external:qjs:std --outfile=dist/hamr.quickjs.js",
     "build:cli:local": "npm run build:cli:bundle && node build-cli.mjs",
     "check": "tsc --noEmit",
     "dev:quickjs": "npm run build:cli:bundle && qjs dist/hamr.quickjs.js",
+    "generate:dictionaries": "node generate-dictionaries.mjs",
     "test": "npm run build && node --test tests/*.test.mjs"
   },
   "dependencies": {
