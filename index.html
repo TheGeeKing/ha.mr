@@ -118,12 +118,22 @@
     #query-warning summary {
       cursor: pointer;
     }
+    header {
+      position: absolute;
+      top: 20px;
+    }
   </style>
   <script src="/qrcode.js"></script>
 </head>
 <body>
 
   <div id="loader"></div>
+
+  <header>
+    <a class="source-link" href="https://github.com/p2r3/ha.mr">Source code on GitHub</a>
+    |
+    <a class="source-link" href="https://www.youtube.com/watch?v=TOr1Vvji6jA">Explanation video</a>
+  </header>
 
   <div id="content">
 
@@ -164,12 +174,6 @@
       <input type="checkbox" id="settings-qr" name="settings-qr" autocomplete="off">
       <label for="settings-qr"> Output QR code</label><br>
     </span>
-    <br><br>
-    <div>
-      <a class="source-link" href="https://github.com/p2r3/ha.mr">Source code on GitHub</a>
-      |
-      <a class="source-link" href="https://www.youtube.com/watch?v=TOr1Vvji6jA">Explanation video</a>
-    </div>
 
   </div>
 
