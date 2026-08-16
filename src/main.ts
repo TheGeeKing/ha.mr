@@ -4,6 +4,7 @@ import {
   outputAlphabetQR,
   outputAlphabetEmoji
 } from "./alphabets.js";
+import type { QRCodeErrorCorrectionLevel } from "qrcode";
 
 let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
@@ -14,26 +15,34 @@ if (webPort && webPort !== "80" && webPort !== "443") {
   domain += `:${webPort}`;
 }
 
-var settings = {
+type SettingName = "emoji" | "qr";
+
+function requiredElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Missing element: ${selector}`);
+  return element;
+}
+
+const settings: Record<SettingName, boolean> = {
   emoji: false,
   qr: false
 };
 
-const settingsElements = {
+const settingsElements: Record<SettingName, string> = {
   emoji: "#settings-emoji",
   qr: "#settings-qr"
 };
 
-for (const setting in settingsElements) {
-  const element = document.querySelector(settingsElements[setting]);
+for (const setting of Object.keys(settingsElements) as SettingName[]) {
+  const element = requiredElement<HTMLInputElement>(settingsElements[setting]);
   settings[setting] = element.checked;
-  element.addEventListener("change", (event) => {
+  element.addEventListener("change", () => {
     settings[setting] = element.checked;
     updateOutput();
   });
 }
 
-function countSymbols (string, alphabet) {
+function countSymbols (string: string, alphabet: string[]): number {
   let count = 0;
   while (string) {
     const symbol = alphabet.find(c => string.endsWith(c));
@@ -43,14 +52,14 @@ function countSymbols (string, alphabet) {
   return count;
 }
 
-const inputLinkElement = document.querySelector("#input-link");
-const outputLinkElement = document.querySelector("#output-link");
-const outputRatioElement = document.querySelector("#output-ratio");
-const queryWarningElement = document.querySelector("#query-warning");
+const inputLinkElement = requiredElement<HTMLInputElement>("#input-link");
+const outputLinkElement = requiredElement<HTMLAnchorElement>("#output-link");
+const outputRatioElement = requiredElement<HTMLElement>("#output-ratio");
+const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
 
-const qrCodeImage = document.querySelector("#qrcode");
-const qrCodeCorrectionLevelContainer = document.querySelector("#qr-correct-level-container");
-const qrCodeCorrectionLevelElement = document.querySelector("#qr-correct-level");
+const qrCodeImage = requiredElement<HTMLImageElement>("#qrcode");
+const qrCodeCorrectionLevelContainer = requiredElement<HTMLElement>("#qr-correct-level-container");
+const qrCodeCorrectionLevelElement = requiredElement<HTMLInputElement>("#qr-correct-level");
 
 let qrCorrectionManuallySet = false;
 
@@ -59,16 +68,17 @@ qrCodeCorrectionLevelElement.addEventListener("change", () => {
   updateOutput();
 });
 
-function getOptimalErrorCorrectionLevel (text) {
-  const levels = ["M", "Q", "H"];
+const qrErrorLevels = ["L", "M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
+const automaticQrErrorLevels = ["M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
 
+function getOptimalErrorCorrectionLevel (text: string): QRCodeErrorCorrectionLevel {
   const baseVersion = QRCode.create(text, {
-    errorCorrectionLevel: levels[0]
+    errorCorrectionLevel: automaticQrErrorLevels[0]
   }).version;
 
-  let optimalLevel = levels[0];
+  let optimalLevel: QRCodeErrorCorrectionLevel = automaticQrErrorLevels[0];
 
-  for (const level of levels.slice(1)) {
+  for (const level of automaticQrErrorLevels.slice(1)) {
     try {
       const candidate = QRCode.create(text, {
         errorCorrectionLevel: level
@@ -87,7 +97,7 @@ function getOptimalErrorCorrectionLevel (text) {
   return optimalLevel;
 }
 
-function updateOutput () {
+function updateOutput (): void {
   const input = inputLinkElement.value.trim();
   try {
     const alphabet = settings.emoji ? outputAlphabetEmoji : outputAlphabetASCII;
@@ -129,8 +139,6 @@ function updateOutput () {
     outputLinkElement.href = `http://${domain}#${output}`;
     outputLinkElement.style.color = "";
     if (settings.qr) {
-      const correctionLevels = ["L", "M", "Q", "H"];
-
       qrCodeImage.style.display = "inline";
       qrCodeCorrectionLevelContainer.style.display = "inline";
 
@@ -139,12 +147,10 @@ function updateOutput () {
 
       if (!qrCorrectionManuallySet) {
         const optimalLevel = getOptimalErrorCorrectionLevel(qrCodeLink);
-        qrCodeCorrectionLevelElement.value = correctionLevels.indexOf(optimalLevel);
+        qrCodeCorrectionLevelElement.value = String(qrErrorLevels.indexOf(optimalLevel));
       }
 
-      const errorCorrection =
-        correctionLevels[qrCodeCorrectionLevelElement.value];
-
+      const errorCorrection = qrErrorLevels[Number(qrCodeCorrectionLevelElement.value)] ?? "M";
       QRCode.toDataURL(qrCodeLink, {
         errorCorrectionLevel: errorCorrection,
         scale: 8
@@ -183,7 +189,7 @@ inputLinkElement.addEventListener("input", () => {
 });
 
 (() => {
-  let payload = null;
+  let payload: string | null = null;
   let alphabet = outputAlphabetASCII;
 
   // Get hash value of current address bar
@@ -215,8 +221,8 @@ inputLinkElement.addEventListener("input", () => {
 
   updateOutput();
 
-  document.querySelector("#loader").style.opacity = 0;
-  document.querySelector("#content").style.opacity = 1;
-  document.querySelector("#content").style.pointerEvents = "auto";
+  requiredElement<HTMLElement>("#loader").style.opacity = "0";
+  requiredElement<HTMLElement>("#content").style.opacity = "1";
+  requiredElement<HTMLElement>("#content").style.pointerEvents = "auto";
 
 })();

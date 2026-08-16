@@ -28,7 +28,7 @@ if (input.toLowerCase().startsWith("http://ha.mr")) {
 }
 
 if (payload || command === "decode") {
-  const isQRCode = input[0] === "/";
+  const isQRCode = payload.startsWith("/");
   payload = payload.slice(1);
   const useEmoji = Array.from(payload).some(c => !outputAlphabetASCII.includes(c));
   if (isQRCode) console.log(decompress(payload, outputAlphabetQR));
