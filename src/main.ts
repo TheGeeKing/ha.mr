@@ -70,13 +70,14 @@ qrCodeCorrectionLevelElement.addEventListener("change", () => {
 
 const qrErrorLevels = ["L", "M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
 const automaticQrErrorLevels = ["M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
+type AutomaticQrErrorLevel = (typeof automaticQrErrorLevels)[number];
 
-function getOptimalErrorCorrectionLevel (text: string): QRCodeErrorCorrectionLevel {
+function getOptimalErrorCorrectionLevel (text: string): AutomaticQrErrorLevel {
   const baseVersion = QRCode.create(text, {
     errorCorrectionLevel: automaticQrErrorLevels[0]
   }).version;
 
-  let optimalLevel: QRCodeErrorCorrectionLevel = automaticQrErrorLevels[0];
+  let optimalLevel: AutomaticQrErrorLevel = automaticQrErrorLevels[0];
 
   for (const level of automaticQrErrorLevels.slice(1)) {
     try {
