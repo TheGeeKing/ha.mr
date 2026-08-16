@@ -72,8 +72,26 @@ const qrErrorLevels = ["L", "M", "Q", "H"] as const satisfies QRCodeErrorCorrect
 const automaticQrErrorLevels = ["M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
 type AutomaticQrErrorLevel = (typeof automaticQrErrorLevels)[number];
 
-function getOptimalErrorCorrectionLevel (text: string): AutomaticQrErrorLevel {
-  const baseVersion = QRCode.create(text, {
+let qrCodeLibraryPromise: Promise<typeof import("qrcode")> | undefined;
+let outputRevision = 0;
+
+function loadQrCodeLibrary (): Promise<typeof import("qrcode")> {
+  qrCodeLibraryPromise ??= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "qrcode.js";
+    script.onload = () => resolve(QRCode);
+    script.onerror = () => reject(new Error("Failed to load QR code generator"));
+    document.head.append(script);
+  });
+
+  return qrCodeLibraryPromise;
+}
+
+function getOptimalErrorCorrectionLevel (
+  qrCodeLibrary: typeof import("qrcode"),
+  text: string
+): AutomaticQrErrorLevel {
+  const baseVersion = qrCodeLibrary.create(text, {
     errorCorrectionLevel: automaticQrErrorLevels[0]
   }).version;
 
@@ -81,7 +99,7 @@ function getOptimalErrorCorrectionLevel (text: string): AutomaticQrErrorLevel {
 
   for (const level of automaticQrErrorLevels.slice(1)) {
     try {
-      const candidate = QRCode.create(text, {
+      const candidate = qrCodeLibrary.create(text, {
         errorCorrectionLevel: level
       });
 
@@ -98,7 +116,8 @@ function getOptimalErrorCorrectionLevel (text: string): AutomaticQrErrorLevel {
   return optimalLevel;
 }
 
-function updateOutput (): void {
+async function updateOutput (): Promise<void> {
+  const revision = ++outputRevision;
   const input = inputLinkElement.value.trim();
   try {
     const alphabet = settings.emoji ? outputAlphabetEmoji : outputAlphabetASCII;
@@ -140,6 +159,9 @@ function updateOutput (): void {
     outputLinkElement.href = `http://${domain}#${output}`;
     outputLinkElement.style.color = "";
     if (settings.qr) {
+      const qrCodeLibrary = await loadQrCodeLibrary();
+      if (!settings.qr || revision !== outputRevision) return;
+
       qrCodeImage.style.display = "inline";
       qrCodeCorrectionLevelContainer.style.display = "inline";
 
@@ -147,15 +169,16 @@ function updateOutput (): void {
       const qrCodeLink = `HTTP://${qrCodeDomain}/${compress(input, outputAlphabetQR)}`;
 
       if (!qrCorrectionManuallySet) {
-        const optimalLevel = getOptimalErrorCorrectionLevel(qrCodeLink);
+        const optimalLevel = getOptimalErrorCorrectionLevel(qrCodeLibrary, qrCodeLink);
         qrCodeCorrectionLevelElement.value = String(qrErrorLevels.indexOf(optimalLevel));
       }
 
       const errorCorrection = qrErrorLevels[Number(qrCodeCorrectionLevelElement.value)] ?? "M";
-      QRCode.toDataURL(qrCodeLink, {
+      qrCodeLibrary.toDataURL(qrCodeLink, {
         errorCorrectionLevel: errorCorrection,
         scale: 8
       }, (err, url) => {
+        if (revision !== outputRevision) return;
         if (err) {
           qrCodeImage.style.display = "none";
           qrCodeCorrectionLevelContainer.style.display = "none";
