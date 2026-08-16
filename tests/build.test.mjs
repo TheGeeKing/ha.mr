@@ -12,7 +12,7 @@ test("build contains every deployable artifact referenced by HTML", () => {
     "404.html",
     "CNAME",
     "main.js",
-    "standalone.js",
+    "node.js",
     "qrcode.js"
   ];
 

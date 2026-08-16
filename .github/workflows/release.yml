@@ -1,0 +1,147 @@
+name: Release CLI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  QUICKJS_REF: 954dc53628e36891f93c359aa60895c2ae3dac6b
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build:
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    needs: release-please
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux-x64
+            executable: hamr
+            extension: ""
+          - runner: ubuntu-24.04-arm
+            platform: linux-arm64
+            executable: hamr
+            extension: ""
+          - runner: windows-latest
+            platform: windows-x64
+            executable: hamr.exe
+            extension: .exe
+          - runner: windows-11-arm
+            platform: windows-arm64
+            executable: hamr.exe
+            extension: .exe
+          - runner: macos-15-intel
+            platform: macos-x64
+            executable: hamr
+            extension: ""
+          - runner: macos-14
+            platform: macos-arm64
+            executable: hamr
+            extension: ""
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check out ha.mr
+        uses: actions/checkout@v6
+
+      - name: Check out QuickJS-NG
+        uses: actions/checkout@v6
+        with:
+          repository: quickjs-ng/quickjs
+          ref: ${{ env.QUICKJS_REF }}
+          path: quickjs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build and test JavaScript
+        run: |
+          npm ci
+          npm test
+          npm run build:cli:bundle
+
+      - name: Build QuickJS-NG
+        shell: pwsh
+        run: |
+          cmake -S quickjs -B quickjs/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build quickjs/build --config Release --target qjs_exe --parallel
+
+      - name: Compile and test native CLI
+        shell: pwsh
+        env:
+          EXECUTABLE: ${{ matrix.executable }}
+        run: |
+          $qjsName = if ($IsWindows) { "qjs.exe" } else { "qjs" }
+          $qjs = Get-ChildItem quickjs/build -Recurse -File |
+            Where-Object Name -eq $qjsName |
+            Select-Object -First 1
+          if (-not $qjs) { throw "QuickJS executable not found" }
+
+          & $qjs.FullName --compile dist/hamr.quickjs.js --out $env:EXECUTABLE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          if (-not $IsWindows) { chmod +x $env:EXECUTABLE }
+          $env:HAMR_NATIVE_PATH = (Resolve-Path $env:EXECUTABLE).Path
+          node --test tests/cli.test.mjs
+
+      - name: Version native CLI
+        shell: pwsh
+        env:
+          EXECUTABLE: ${{ matrix.executable }}
+          RELEASE_FILE: hamr-${{ needs.release-please.outputs.version }}-${{ matrix.platform }}${{ matrix.extension }}
+        run: |
+          Move-Item -Path $env:EXECUTABLE -Destination $env:RELEASE_FILE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamr-${{ needs.release-please.outputs.version }}-${{ matrix.platform }}
+          path: hamr-${{ needs.release-please.outputs.version }}-${{ matrix.platform }}${{ matrix.extension }}
+          if-no-files-found: error
+
+  publish-assets:
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    needs: [release-please, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: release-assets
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: sha256sum hamr-* > "SHA256SUMS-$VERSION"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG_NAME" release-assets/* --clobber

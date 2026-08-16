@@ -24,6 +24,36 @@ On Linux, you can also set the port for a single command without creating a `.en
 APP_PORT=8080 docker compose -f compose.production.yml up -d
 ```
 
+## CLI development
+
+### QuickJS-NG
+
+Download the [QuickJS-NG `qjs` executable](https://github.com/quickjs-ng/quickjs/releases) for your platform, rename it to `qjs` (`qjs.exe` on Windows), and add it to `PATH`.
+
+Build the QuickJS bundle and run it through the interpreter:
+
+```sh
+npm run dev:quickjs -- https://www.example.com
+```
+
+Build a native executable for the current platform:
+
+```sh
+npm run build:cli:local
+```
+
+Run `dist/hamr.exe` on Windows or `dist/hamr` on Linux and macOS.
+
+### Node.js
+
+```sh
+npm run build
+```
+
+```sh
+node dist/node.js https://www.example.com
+```
+
 ## How
 
 1. Common parts of the link (e.g. protocol, `www.` prefix, `index.html`) are manually detected and reduced to individual bits. If present, the port is encoded as a raw numeric value.
@@ -34,6 +64,6 @@ APP_PORT=8080 docker compose -f compose.production.yml up -d
 
 ## Acknowledgements
 
-- https://www.npmjs.com/package/qrcode
-- https://github.com/smythp/reddit_links_dataset
-- https://github.com/ada-url/url-dataset
+- <https://www.npmjs.com/package/qrcode>
+- <https://github.com/smythp/reddit_links_dataset>
+- <https://github.com/ada-url/url-dataset>

@@ -161,10 +161,10 @@ export function compress (input: string, alphabet: string[]): string {
   let number = 1n;
 
   // Validate URL, add protocol if needed
-  let url;
-  if (URL.canParse(input)) {
+  let url: URL;
+  try {
     url = new URL(input);
-  } else {
+  } catch {
     url = new URL("http://" + input);
   }
 
