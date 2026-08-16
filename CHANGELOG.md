@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.0.0...ha.mr-v1.0.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* specify repository when uploading release assets ([a5dbb49](https://github.com/TheGeeKing/ha.mr/commit/a5dbb497321496d3a06665fac655d42b83db2013))
+
 ## 1.0.0 (2026-08-16)
 
 
