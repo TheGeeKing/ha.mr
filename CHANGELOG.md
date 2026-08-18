@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.1.0](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.0.1...ha.mr-v1.1.0) (2026-08-18)
+
+
+### Features
+
+* add flake.nix ([4a8b9ad](https://github.com/TheGeeKing/ha.mr/commit/4a8b9ad4cd0bdfe534b4ae072d496cc12c4c1d4e))
+* show confirmation dialog before redirect ([36c95d6](https://github.com/TheGeeKing/ha.mr/commit/36c95d674a5a7170e821b02f9bfb8f9b6e79049e))
+
+
+### Bug Fixes
+
+* dark mode contrast for yellow warning box ([46a5c30](https://github.com/TheGeeKing/ha.mr/commit/46a5c30399e9aead1ba64b4b896ace1edce7906a))
+* deduplicate index and 404 by deploying GitHub Pages on /docs ([36e0657](https://github.com/TheGeeKing/ha.mr/commit/36e0657cb30637a0921b1e894149ff9573dbd5c1))
+* encode IPv6 addresses without version bump ([bac662d](https://github.com/TheGeeKing/ha.mr/commit/bac662d94d3a81142c3b3fa7de43820cb8d18392))
+* missing files in web host root ([54cbcb0](https://github.com/TheGeeKing/ha.mr/commit/54cbcb0ef049399aa7e8bb8406bec88b4c91562c))
+* preserve docs module paths in Nix package ([c61600a](https://github.com/TheGeeKing/ha.mr/commit/c61600ace15899df2fd960b1552e9c6a226d35aa))
+* preserve percent-encoded reserved path characters ([bdf0d77](https://github.com/TheGeeKing/ha.mr/commit/bdf0d77d2ffaa4b56808eda24d4809a74192c265))
+
+
+### Performance Improvements
+
+* lazy-load QR code generator when enabled ([aeddcc7](https://github.com/TheGeeKing/ha.mr/commit/aeddcc74473f94c13fd4f0c1d8d9ea318a43345f))
+* optimize Huffman dictionaries ([69968fe](https://github.com/TheGeeKing/ha.mr/commit/69968fe0d19eeb4fe034029bc6d855eb7ab4850a))
+
 ## [1.0.1](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.0.0...ha.mr-v1.0.1) (2026-08-16)
 
 
