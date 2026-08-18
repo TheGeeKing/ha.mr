@@ -64,6 +64,6 @@ node dist/node.js https://www.example.com
 
 ## Acknowledgements
 
-- <https://www.npmjs.com/package/qrcode>
-- <https://github.com/smythp/reddit_links_dataset>
-- <https://github.com/ada-url/url-dataset>
+- https://www.npmjs.com/package/qrcode
+- https://github.com/smythp/reddit_links_dataset
+- https://github.com/ada-url/url-dataset
