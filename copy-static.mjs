@@ -8,7 +8,7 @@ mkdirSync(dist, { recursive: true });
 
 const files = [
   ["docs/404.html", "404.html"],
-  ["CNAME", "CNAME"]
+  ["docs/CNAME", "CNAME"]
 ];
 
 for (const [from, to] of files) {

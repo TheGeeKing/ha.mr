@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY tsconfig.json copy-static.mjs generate-dictionaries.mjs compression-dictionaries.json CNAME ./
+COPY tsconfig.json copy-static.mjs generate-dictionaries.mjs compression-dictionaries.json ./
 COPY docs/ ./docs/
 COPY src/ ./src/
 COPY tests/ ./tests/
