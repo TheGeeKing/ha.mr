@@ -1,7 +1,7 @@
 {
   "name": "ha.mr",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "build": "npm run generate:dictionaries && tsc && node copy-static.mjs && esbuild node_modules/qrcode/lib/browser.js --bundle --format=iife --global-name=QRCode --outfile=dist/qrcode.js",
