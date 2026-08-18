@@ -218,19 +218,20 @@ export function compress (input: string, alphabet: string[]): string {
   }
 
   let hostname = url.hostname.toLowerCase();
+  const isIPv6 = hostname.startsWith("[") && hostname.endsWith("]");
   const port = BigInt(url.port);
   const lastLabel = hostname.split(".").at(-1)?.toLowerCase();
-  const tld = hostname.includes(".") && lastLabel ? lastLabel : "";
+  const tld = !isIPv6 && hostname.includes(".") && lastLabel ? lastLabel : "";
 
-  if (tld in tldEncode) {
+  if (tld && tld in tldEncode) {
     hostname = hostname.split(".").slice(0, -1).join(".");
   }
 
   const isHTTPS = url.protocol === "https:";
-  const hasWWW = url.hostname.toLowerCase().startsWith("www.");
+  const hasWWW = !isIPv6 && url.hostname.toLowerCase().startsWith("www.");
   if (hasWWW) hostname = hostname.slice(4);
 
-  const knownSLD = sldList.find(c => hostname.endsWith(c)) || "";
+  const knownSLD = !isIPv6 ? sldList.find(c => hostname.endsWith(c)) || "" : "";
   const subdomain = hostname.slice(0, -knownSLD.length);
 
   // Read URL path, split it into segments
@@ -377,8 +378,16 @@ export function compress (input: string, alphabet: string[]): string {
     }
   }
 
-  // Encode either SLD + subdomain or full hostname
-  if (!knownSLD) {
+  // Encode IPv6 literal, SLD + subdomain, or full hostname
+  if (isIPv6) {
+    const ipv6Number = ipv6ToNumber(hostname.slice(1, -1));
+
+    number <<= 128n;
+    number += ipv6Number;
+
+    // An END as the first hostname symbol marks an IPv6 literal.
+    number = huffmanEncode(number, domainEncode["END"]);
+  } else if (!knownSLD) {
     // Write stopping token only if path follows
     if (pathSegments.length > 0) number = huffmanEncode(number, domainEncode["END"]);
     for (let i = hostname.length - 1; i >= 0; i --) {
@@ -511,11 +520,23 @@ export function decompress (input: string, alphabet: string[]): string {
       }
     }
   } else {
-    while (number > 1n) {
-      const { newNumber, digit } = huffmanDecode(number, domainDecode);
-      number = newNumber;
-      if (digit === "END") break;
+    const { newNumber, digit } = huffmanDecode(number, domainDecode);
+    number = newNumber;
+
+    if (digit === "END") {
+      const ipv6Number = number & ((1n << 128n) - 1n);
+      number >>= 128n;
+
+      domain = `[${numberToIPv6(ipv6Number)}]`;
+    } else {
       domain += digit;
+
+      while (number > 1n) {
+        const nextDigit = huffmanDecode(number, domainDecode);
+        number = nextDigit.newNumber;
+        if (nextDigit.digit === "END") break;
+        domain += nextDigit.digit;
+      }
     }
   }
 
