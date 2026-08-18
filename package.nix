@@ -17,8 +17,8 @@ buildNpmPackage {
 
   installPhase = ''
     runHook preInstall
-    mkdir -p $out/bin $out/lib
-    cp -r dist $out/lib/hamr
+    mkdir -p $out/bin $out/lib/hamr
+    cp dist/*.js $out/lib/hamr
     makeWrapper ${lib.getExe nodejs} $out/bin/hamr \
       --add-flags "$out/lib/hamr/node.js"
     runHook postInstall
