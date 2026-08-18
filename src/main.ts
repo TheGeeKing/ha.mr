@@ -207,6 +207,17 @@ async function updateOutput (): Promise<void> {
   }
 }
 
+const redirectContainerElement = requiredElement<HTMLElement>("#redirect-container");
+const redirectLinkElement = requiredElement<HTMLAnchorElement>("#redirect-link");
+const loaderElement = requiredElement<HTMLElement>("#loader");
+
+function handleRedirectPrompt (target: string): void {
+  loaderElement.style.display = "none";
+  redirectContainerElement.style.display = "flex";
+  redirectLinkElement.textContent = target;
+  redirectLinkElement.href = target;
+}
+
 inputLinkElement.addEventListener("input", () => {
   qrCorrectionManuallySet = false;
   updateOutput();
@@ -235,7 +246,7 @@ inputLinkElement.addEventListener("input", () => {
   if (payload && payload.trim()) {
     try {
       const target = decompress(payload, alphabet);
-      window.location.href = target;
+      handleRedirectPrompt(target);
       return;
     } catch (e) {
       console.warn(`Redirect failed. Could not decode input.`);
@@ -245,8 +256,10 @@ inputLinkElement.addEventListener("input", () => {
 
   updateOutput();
 
-  requiredElement<HTMLElement>("#loader").style.opacity = "0";
+  loaderElement.style.opacity = "0";
   requiredElement<HTMLElement>("#content").style.opacity = "1";
   requiredElement<HTMLElement>("#content").style.pointerEvents = "auto";
+  requiredElement<HTMLElement>("header").style.opacity = "1";
+  requiredElement<HTMLElement>("header").style.pointerEvents = "auto";
 
 })();
