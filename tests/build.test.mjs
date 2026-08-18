@@ -9,7 +9,6 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 test("build contains every deployable artifact referenced by HTML", () => {
   const expectedFiles = [
-    "index.html",
     "404.html",
     "CNAME",
     "compression-dictionaries.js",
@@ -22,11 +21,9 @@ test("build contains every deployable artifact referenced by HTML", () => {
     assert.equal(existsSync(join(root, "dist", file)), true, `Missing dist/${file}`);
   }
 
-  for (const htmlFile of ["index.html", "404.html"]) {
-    const html = readFileSync(join(root, "dist", htmlFile), "utf8");
-    assert.doesNotMatch(html, /src="qrcode\.js"/);
-    assert.match(html, /src="main\.js"/);
-  }
+  const html = readFileSync(join(root, "dist", "404.html"), "utf8");
+  assert.doesNotMatch(html, /src="qrcode\.js"/);
+  assert.match(html, /src="main\.js"/);
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
   assert.match(main, /script\.src = "qrcode\.js"/);

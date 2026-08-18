@@ -7,8 +7,7 @@ const dist = join(root, "dist");
 mkdirSync(dist, { recursive: true });
 
 const files = [
-  ["index.html", "index.html"],
-  ["404.html", "404.html"],
+  ["docs/404.html", "404.html"],
   ["CNAME", "CNAME"]
 ];
 
