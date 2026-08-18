@@ -16,7 +16,8 @@ const roundTripCases = [
   ],
   ["https://en.wikipedia.org/wiki/TypeScript", "https://en.wikipedia.org/wiki/TypeScript"],
   ["https://example.com/%E2%9C%93", "https://example.com/%e2%9c%93"],
-  ["example.com/a-b_c", "http://example.com/a-b_c"]
+  ["example.com/a-b_c", "http://example.com/a-b_c"],
+  ["https://example.com/a%2Fb", "https://example.com/a%2fb"]
 ];
 
 const alphabets = [

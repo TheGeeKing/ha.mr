@@ -134,6 +134,73 @@ function huffmanDecode (number: bigint, lookup: Record<string, string>): { newNu
 }
 
 /**
+ * Converts a 128-bit integer to a compressed IPv6 address.
+ * @param {BigInt} number 128-bit IPv6 value
+ * @returns {string} IPv6 address without square brackets
+ */
+function numberToIPv6 (number: bigint): string {
+  const hextets = [];
+
+  for (let i = 0; i < 8; i ++) {
+    hextets.unshift((number & 0xffffn).toString(16));
+    number >>= 16n;
+  }
+
+  let bestStart = -1;
+  let bestLength = 0;
+  let start = -1;
+
+  for (let i = 0; i <= hextets.length; i ++) {
+    if (i < hextets.length && hextets[i] === "0") {
+      if (start === -1) start = i;
+    } else if (start !== -1) {
+      const length = i - start;
+
+      if (length > bestLength && length > 1) {
+        bestStart = start;
+        bestLength = length;
+      }
+
+      start = -1;
+    }
+  }
+
+  if (bestStart === -1) return hextets.join(":");
+
+  const left = hextets.slice(0, bestStart).join(":");
+  const right = hextets.slice(bestStart + bestLength).join(":");
+
+  return `${left}::${right}`;
+}
+
+/**
+ * Converts an IPv6 address to its 128-bit integer representation.
+ * @param {string} input IPv6 address without square brackets
+ * @returns {BigInt} 128-bit IPv6 value
+ */
+function ipv6ToNumber (input: string): bigint {
+  const halves = input.split("::");
+  const left = halves[0] ? halves[0].split(":") : [];
+  const right = halves[1] ? halves[1].split(":") : [];
+
+  const missing = 8 - left.length - right.length;
+  const hextets = [
+    ...left,
+    ...Array(missing).fill("0"),
+    ...right
+  ];
+
+  let number = 0n;
+
+  for (const hextet of hextets) {
+    number <<= 16n;
+    number += BigInt(`0x${hextet || "0"}`);
+  }
+
+  return number;
+}
+
+/**
  * Compresses the input link and encodes it to the given alphabet.
  * @param {string} input Link to compress
  * @param {string[]} alphabet Output alphabet as array of characters/strings
@@ -195,9 +262,18 @@ export function compress (input: string, alphabet: string[]): string {
     pathSegments.push({ type: "hash", value: url.hash.slice(1) });
   }
 
-  // Normalize path segment encoding
+  // Normalize path segment encoding while preserving escaped reserved characters
+  const reservedEscape = /(%(?:23|24|26|2B|2C|2F|3A|3B|3D|3F|40))/gi;
+
   for (const segment of pathSegments) {
-    segment.value = encodeURI(decodeURI(segment.value));
+    segment.value = segment.value
+      .split(reservedEscape)
+      .map((part, index) =>
+        index % 2 === 1
+          ? part
+          : encodeURI(decodeURI(part))
+      )
+      .join("");
   }
 
   // Encode path following domain segment-by-segment, using best algorithm for each
