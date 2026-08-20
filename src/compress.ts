@@ -209,12 +209,14 @@ function ipv6ToNumber (input: string): bigint {
 export function compress (input: string, alphabet: string[]): string {
   let number = 1n;
 
-  // Validate URL, add protocol if needed
-  let url: URL;
-  try {
-    url = new URL(input);
-  } catch {
-    url = new URL("http://" + input);
+  const url = new URL(input);
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`Unsupported protocol: ${url.protocol}`);
+  }
+
+  if (url.username || url.password) {
+    throw new Error("Credentials in URLs are not supported");
   }
 
   let hostname = url.hostname.toLowerCase();
