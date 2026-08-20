@@ -5,6 +5,8 @@ import {
   outputAlphabetEmoji
 } from "./alphabets.js";
 
+let qrGenerate, qrMode, qrCorrection;
+
 let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
   console.log(`This page is intended to be used on the ha.mr domain. You are currently on ${domain}.`);
@@ -52,40 +54,9 @@ const qrCodeImage = document.querySelector("#qrcode");
 const qrCodeCorrectionLevelContainer = document.querySelector("#qr-correct-level-container");
 const qrCodeCorrectionLevelElement = document.querySelector("#qr-correct-level");
 
-let qrCorrectionManuallySet = false;
-
-qrCodeCorrectionLevelElement.addEventListener("change", () => {
-  qrCorrectionManuallySet = true;
+qrCodeCorrectionLevelElement.addEventListener("input", () => {
   updateOutput();
 });
-
-function getOptimalErrorCorrectionLevel (text) {
-  const levels = ["M", "Q", "H"];
-
-  const baseVersion = QRCode.create(text, {
-    errorCorrectionLevel: levels[0]
-  }).version;
-
-  let optimalLevel = levels[0];
-
-  for (const level of levels.slice(1)) {
-    try {
-      const candidate = QRCode.create(text, {
-        errorCorrectionLevel: level
-      });
-
-      if (candidate.version > baseVersion) {
-        break;
-      }
-
-      optimalLevel = level;
-    } catch {
-      break;
-    }
-  }
-
-  return optimalLevel;
-}
 
 function updateOutput () {
   const input = inputLinkElement.value.trim();
@@ -129,7 +100,18 @@ function updateOutput () {
     outputLinkElement.href = `http://${domain}#${output}`;
     outputLinkElement.style.color = "";
     if (settings.qr) {
-      const correctionLevels = ["L", "M", "Q", "H"];
+      // Lazyload the qr generator to avoid loading it on a redirect
+      if (!qrGenerate) {
+        import("./lean-qr/lean-qr.js").then((module) => {
+          qrGenerate = module.generate;
+          qrMode = module.mode;
+          qrCorrection = module.correction;
+          updateOutput();
+        });
+        return;
+      }
+
+      const correctionLevels = [qrCorrection.L, qrCorrection.M, qrCorrection.Q, qrCorrection.H];
 
       qrCodeImage.style.display = "inline";
       qrCodeCorrectionLevelContainer.style.display = "inline";
@@ -137,26 +119,31 @@ function updateOutput () {
       const qrCodeDomain = domain.toUpperCase();
       const qrCodeLink = `HTTP://${qrCodeDomain}/${compress(input, outputAlphabetQR)}`;
 
-      if (!qrCorrectionManuallySet) {
-        const optimalLevel = getOptimalErrorCorrectionLevel(qrCodeLink);
-        qrCodeCorrectionLevelElement.value = correctionLevels.indexOf(optimalLevel);
-      }
+      const errorCorrection = correctionLevels[qrCodeCorrectionLevelElement.value];
 
-      const errorCorrection =
-        correctionLevels[qrCodeCorrectionLevelElement.value];
+      const qr = qrGenerate(
+        qrMode.alphaNumeric(qrCodeLink),
+        {
+          minVersion: 1,
+          maxVersion: 40,
+          minCorrectionLevel: errorCorrection,
+          // Lean-qr will choose the highest ECC that will fit in the smallest version, between minCorrectionLevel and maxCorrectionLevel
+          maxCorrectionLevel: qrCorrection.H,
+        });
 
-      QRCode.toDataURL(qrCodeLink, {
-        errorCorrectionLevel: errorCorrection,
-        scale: 8
-      }, (err, url) => {
-        if (err) {
-          qrCodeImage.style.display = "none";
-          qrCodeCorrectionLevelContainer.style.display = "none";
-          return;
+      qr.toCanvas(qrCodeImage,
+        {
+          on:  [0x00, 0x00, 0x00, 0xFF], // black
+          off: [0xFF, 0xFF, 0xFF, 0xFF], // white
+          pad: 2,
         }
-        qrCodeImage.src = url;
-        qrCodeImage.title = qrCodeLink;
-      });
+      );
+      // Set image width to qr version size + 4px per side padding, scale by 8
+      // Otherwise the output will be at 1px scale and impossible to see.
+      qrCodeImage.style.width = `${(qr.size + 8) * 8}px`;
+      qrCodeImage.style.height = `${(qr.size + 8) * 8}px`;
+      qrCodeImage.title = qrCodeLink;
+
     } else {
       qrCodeImage.style.display = "none";
       qrCodeCorrectionLevelContainer.style.display = "none";
@@ -189,7 +176,6 @@ function handleRedirectPrompt (target) {
 }
 
 inputLinkElement.addEventListener("input", () => {
-  qrCorrectionManuallySet = false;
   updateOutput();
 });
 

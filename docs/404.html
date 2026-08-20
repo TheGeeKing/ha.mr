@@ -80,10 +80,8 @@
       font-size: 1rem;
       border: 0;
       border-radius: 10px;
-      background-color: light-dark(
-        rgba(0, 0, 0, 0.1),
-        rgba(255, 255, 255, 0.1)
-      );
+      background-color: light-dark(rgba(0, 0, 0, 0.1),
+          rgba(255, 255, 255, 0.1));
       cursor: pointer;
     }
     .title {
@@ -128,6 +126,8 @@
     }
     #qrcode {
       display: none;
+      image-rendering: pixelated;
+      padding: 16px;
     }
     #qr-correct-level-container {
       display: none;
@@ -156,7 +156,6 @@
       transition: opacity 1s;
     }
   </style>
-  <script src="/qrcode.js"></script>
 </head>
 <body>
 
@@ -195,10 +194,10 @@
       <br><span id="output-ratio">&nbsp;</span>
     </p>
 
-    <image width="256" height="256" id="qrcode"></image>
+    <canvas id="qrcode"></canvas>
 
     <span id="qr-correct-level-container">
-      <label>QR code error correction threshold</label>
+      <label>Minimum QR code error correction threshold</label>
       <br>
       <input type="range" name="qr-correct-level" id="qr-correct-level" autocomplete="off" min="0" max="3" value="1">
     </span>
@@ -214,6 +213,6 @@
 
   </div>
 
-  <script type="module" src="/main.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
