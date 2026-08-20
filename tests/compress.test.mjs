@@ -16,6 +16,7 @@ const roundTripCases = [
   ],
   ["https://en.wikipedia.org/wiki/TypeScript", "https://en.wikipedia.org/wiki/TypeScript"],
   ["https://example.com/%E2%9C%93", "https://example.com/%e2%9c%93"],
+  ["example.com/a-b_c", "http://example.com/a-b_c"],
   ["https://example.com/a%2Fb", "https://example.com/a%2fb"],
   ["https://[2001:db8::1]/path", "https://[2001:db8::1]/path"]
 ];
@@ -38,8 +39,8 @@ for (const [alphabetName, alphabet] of alphabets) {
 
 test("compression rejects unsupported and malformed URLs", () => {
   const invalidUrls = [
-    "example.com/path",
     "ftp://example.com/file",
+    "mailto:user@example.com",
     "https://user:password@example.com",
     "http://"
   ];

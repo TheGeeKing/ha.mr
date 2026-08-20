@@ -209,7 +209,8 @@ function ipv6ToNumber (input: string): bigint {
 export function compress (input: string, alphabet: string[]): string {
   let number = 1n;
 
-  const url = new URL(input);
+  const hasProtocol = /^[A-Za-z][A-Za-z\d+.-]*:/.test(input);
+  const url = new URL(hasProtocol ? input : `http://${input}`);
 
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error(`Unsupported protocol: ${url.protocol}`);
