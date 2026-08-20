@@ -23,7 +23,7 @@ test("build contains every deployable artifact referenced by HTML", () => {
 
   const html = readFileSync(join(root, "dist", "404.html"), "utf8");
   assert.doesNotMatch(html, /src="lean-qr\.js"/);
-  assert.match(html, /src="main\.js"/);
+  assert.match(html, /src="\/main\.js"/);
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
   assert.match(main, /script\.src = "lean-qr\.js"/);
