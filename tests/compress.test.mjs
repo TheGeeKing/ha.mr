@@ -20,7 +20,20 @@ const roundTripCases = [
   ["https://example.com/a%2Fb", "https://example.com/a%2fb"],
   ["https://example.com?q=a%26b", "https://example.com?q=a%26b"],
   ["https://example.com?q=a%3Db", "https://example.com?q=a%3db"],
+  ["https://example.com?token=a=b", "https://example.com?token=a=b"],
   ["https://example.com?q=hello+world", "https://example.com?q=hello+world"],
+  [
+    "https://example.com/path?empty=&x=1&empty=",
+    "https://example.com/path?empty=&x=1&empty="
+  ],
+  [
+    "https://example.com/a%3Fb%23c?redirect=https%3A%2F%2Fother.example%2Fa%3Fb%3Dc%26d%3De#done",
+    "https://example.com/a%3fb%23c?redirect=https%3a%2f%2fother.example%2fa%3fb%3dc%26d%3de#done"
+  ],
+  [
+    "https://example.com/path#section?x=y&z",
+    "https://example.com/path#section?x=y&z"
+  ],
   ["https://[2001:db8::1]/path", "https://[2001:db8::1]/path"]
 ];
 

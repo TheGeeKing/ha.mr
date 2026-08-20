@@ -43,6 +43,13 @@ for (const runtime of runtimes) {
     assert.equal(execute([compressed]), "https://www.example.com");
   });
 
+  test(`${runtime.name} CLI round-trips QR payloads containing slashes`, () => {
+    const compressed = execute(["https://example.com/13", "qr"]);
+
+    assert.equal(compressed, "HTTP://HA.MR/O/M*PY:");
+    assert.equal(execute([compressed]), "https://example.com/13");
+  });
+
   test(`${runtime.name} CLI round-trips Unicode URLs with query and hash data`, () => {
     const input = "https://example.com/%E2%9C%93?q=caf%C3%A9#r%C3%A9sum%C3%A9";
     const compressed = execute([input]);
