@@ -256,9 +256,12 @@ export function compress (input: string, alphabet: string[]): string {
     .map(c => ({ type: "path", value: c }));
 
   // Add search/query parameters to path segments
-  let queryParams = Array.from(url.searchParams)
-    .flat()
-    .map(c => ({ type: "query", value: c }));
+  const queryParams = url.search
+    ? url.search.slice(1)
+      .split("=")
+      .flatMap(segment => segment.split("&"))
+      .map(value => ({ type: "query", value }))
+    : [];
   pathSegments.push(...queryParams);
 
   // Add hash value to path segments
