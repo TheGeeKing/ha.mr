@@ -271,7 +271,9 @@ export function compress (input, alphabet) {
     .map(c => ({ type: "path", value: c }));
 
   // Add search/query parameters to path segments
-  let queryParams = Array.from(url.searchParams)
+  const queryParams = url.search.slice(1)
+    .split("=")
+    .map(c => c.split("&"))
     .flat()
     .map(c => ({ type: "query", value: c }));
   pathSegments.push(...queryParams);
