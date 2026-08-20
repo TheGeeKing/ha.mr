@@ -12,9 +12,9 @@ test("build contains every deployable artifact referenced by HTML", () => {
     "404.html",
     "CNAME",
     "compression-dictionaries.js",
+    "lean-qr.js",
     "main.js",
-    "node.js",
-    "qrcode.js"
+    "node.js"
   ];
 
   for (const file of expectedFiles) {
@@ -22,11 +22,11 @@ test("build contains every deployable artifact referenced by HTML", () => {
   }
 
   const html = readFileSync(join(root, "dist", "404.html"), "utf8");
-  assert.doesNotMatch(html, /src="qrcode\.js"/);
+  assert.doesNotMatch(html, /src="lean-qr\.js"/);
   assert.match(html, /src="main\.js"/);
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
-  assert.match(main, /script\.src = "qrcode\.js"/);
+  assert.match(main, /script\.src = "lean-qr\.js"/);
 });
 
 test("compression browser modules stay below the transfer-size budget", () => {

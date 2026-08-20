@@ -70,6 +70,6 @@ node dist/node.js https://www.example.com
 
 ## Acknowledgements
 
-- https://www.npmjs.com/package/qrcode
+- https://www.npmjs.com/package/lean-qr
 - https://github.com/smythp/reddit_links_dataset
 - https://github.com/ada-url/url-dataset

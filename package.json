@@ -4,7 +4,7 @@
   "version": "1.1.0",
   "type": "module",
   "scripts": {
-    "build": "npm run generate:dictionaries && tsc && node copy-static.mjs && esbuild node_modules/qrcode/lib/browser.js --bundle --format=iife --global-name=QRCode --outfile=dist/qrcode.js",
+    "build": "npm run generate:dictionaries && tsc && node copy-static.mjs && esbuild lean-qr --bundle --format=iife --global-name=LeanQr --outfile=dist/lean-qr.js",
     "build:cli:bundle": "esbuild src/quickjs.ts --bundle --minify --platform=neutral --main-fields=module,main --format=esm --external:qjs:std --outfile=dist/hamr.quickjs.js",
     "build:cli:local": "npm run build:cli:bundle && node build-cli.mjs",
     "check": "tsc --noEmit",
@@ -13,12 +13,11 @@
     "test": "npm run build && node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "qrcode": "^1.5.4",
+    "lean-qr": "^2.7.3",
     "whatwg-url": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
-    "@types/qrcode": "^1.5.6",
     "@types/whatwg-url": "^13.0.0",
     "esbuild": "^0.28.2",
     "typescript": "^7.0.2"

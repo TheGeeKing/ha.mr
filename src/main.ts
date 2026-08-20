@@ -4,7 +4,6 @@ import {
   outputAlphabetQR,
   outputAlphabetEmoji
 } from "./alphabets.js";
-import type { QRCodeErrorCorrectionLevel } from "qrcode";
 
 let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
@@ -57,63 +56,27 @@ const outputLinkElement = requiredElement<HTMLAnchorElement>("#output-link");
 const outputRatioElement = requiredElement<HTMLElement>("#output-ratio");
 const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
 
-const qrCodeImage = requiredElement<HTMLImageElement>("#qrcode");
+const qrCodeCanvas = requiredElement<HTMLCanvasElement>("#qrcode");
 const qrCodeCorrectionLevelContainer = requiredElement<HTMLElement>("#qr-correct-level-container");
 const qrCodeCorrectionLevelElement = requiredElement<HTMLInputElement>("#qr-correct-level");
 
-let qrCorrectionManuallySet = false;
-
-qrCodeCorrectionLevelElement.addEventListener("change", () => {
-  qrCorrectionManuallySet = true;
+qrCodeCorrectionLevelElement.addEventListener("input", () => {
   updateOutput();
 });
 
-const qrErrorLevels = ["L", "M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
-const automaticQrErrorLevels = ["M", "Q", "H"] as const satisfies QRCodeErrorCorrectionLevel[];
-type AutomaticQrErrorLevel = (typeof automaticQrErrorLevels)[number];
-
-let qrCodeLibraryPromise: Promise<typeof import("qrcode")> | undefined;
+let qrCodeLibraryPromise: Promise<typeof import("lean-qr")> | undefined;
 let outputRevision = 0;
 
-function loadQrCodeLibrary (): Promise<typeof import("qrcode")> {
+function loadQrCodeLibrary (): Promise<typeof import("lean-qr")> {
   qrCodeLibraryPromise ??= new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = "qrcode.js";
-    script.onload = () => resolve(QRCode);
+    script.src = "lean-qr.js";
+    script.onload = () => resolve(LeanQr);
     script.onerror = () => reject(new Error("Failed to load QR code generator"));
     document.head.append(script);
   });
 
   return qrCodeLibraryPromise;
-}
-
-function getOptimalErrorCorrectionLevel (
-  qrCodeLibrary: typeof import("qrcode"),
-  text: string
-): AutomaticQrErrorLevel {
-  const baseVersion = qrCodeLibrary.create(text, {
-    errorCorrectionLevel: automaticQrErrorLevels[0]
-  }).version;
-
-  let optimalLevel: AutomaticQrErrorLevel = automaticQrErrorLevels[0];
-
-  for (const level of automaticQrErrorLevels.slice(1)) {
-    try {
-      const candidate = qrCodeLibrary.create(text, {
-        errorCorrectionLevel: level
-      });
-
-      if (candidate.version > baseVersion) {
-        break;
-      }
-
-      optimalLevel = level;
-    } catch {
-      break;
-    }
-  }
-
-  return optimalLevel;
 }
 
 async function updateOutput (): Promise<void> {
@@ -162,33 +125,40 @@ async function updateOutput (): Promise<void> {
       const qrCodeLibrary = await loadQrCodeLibrary();
       if (!settings.qr || revision !== outputRevision) return;
 
-      qrCodeImage.style.display = "inline";
+      qrCodeCanvas.style.display = "inline";
       qrCodeCorrectionLevelContainer.style.display = "inline";
 
       const qrCodeDomain = domain.toUpperCase();
       const qrCodeLink = `HTTP://${qrCodeDomain}/${compress(input, outputAlphabetQR)}`;
-
-      if (!qrCorrectionManuallySet) {
-        const optimalLevel = getOptimalErrorCorrectionLevel(qrCodeLibrary, qrCodeLink);
-        qrCodeCorrectionLevelElement.value = String(qrErrorLevels.indexOf(optimalLevel));
-      }
-
-      const errorCorrection = qrErrorLevels[Number(qrCodeCorrectionLevelElement.value)] ?? "M";
-      qrCodeLibrary.toDataURL(qrCodeLink, {
-        errorCorrectionLevel: errorCorrection,
-        scale: 8
-      }, (err, url) => {
-        if (revision !== outputRevision) return;
-        if (err) {
-          qrCodeImage.style.display = "none";
-          qrCodeCorrectionLevelContainer.style.display = "none";
-          return;
+      const correctionLevels = [
+        qrCodeLibrary.correction.L,
+        qrCodeLibrary.correction.M,
+        qrCodeLibrary.correction.Q,
+        qrCodeLibrary.correction.H
+      ];
+      const minimumCorrectionLevel =
+        correctionLevels[Number(qrCodeCorrectionLevelElement.value)]
+        ?? qrCodeLibrary.correction.M;
+      const qrCode = qrCodeLibrary.generate(
+        qrCodeLibrary.mode.alphaNumeric(qrCodeLink),
+        {
+          minVersion: 1,
+          maxVersion: 40,
+          minCorrectionLevel: minimumCorrectionLevel,
+          maxCorrectionLevel: qrCodeLibrary.correction.H
         }
-        qrCodeImage.src = url;
-        qrCodeImage.title = qrCodeLink;
+      );
+
+      qrCode.toCanvas(qrCodeCanvas, {
+        on: [0x00, 0x00, 0x00, 0xFF],
+        off: [0xFF, 0xFF, 0xFF, 0xFF],
+        pad: 2
       });
+      qrCodeCanvas.style.width = `${(qrCode.size + 8) * 8}px`;
+      qrCodeCanvas.style.height = `${(qrCode.size + 8) * 8}px`;
+      qrCodeCanvas.title = qrCodeLink;
     } else {
-      qrCodeImage.style.display = "none";
+      qrCodeCanvas.style.display = "none";
       qrCodeCorrectionLevelContainer.style.display = "none";
     }
   } catch (e) {
@@ -199,7 +169,7 @@ async function updateOutput (): Promise<void> {
       outputLinkElement.style.color = "rgb(255, 50, 50)";
       console.error(e);
     }
-    qrCodeImage.style.display = "none";
+    qrCodeCanvas.style.display = "none";
     qrCodeCorrectionLevelContainer.style.display = "none";
     outputRatioElement.style.color = "rgba(255, 255, 255, 0)";
     outputLinkElement.removeAttribute("href");
@@ -219,7 +189,6 @@ function handleRedirectPrompt (target: string): void {
 }
 
 inputLinkElement.addEventListener("input", () => {
-  qrCorrectionManuallySet = false;
   updateOutput();
 });
 

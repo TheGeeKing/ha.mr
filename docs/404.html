@@ -128,6 +128,8 @@
     }
     #qrcode {
       display: none;
+      image-rendering: pixelated;
+      padding: 16px;
     }
     #qr-correct-level-container {
       display: none;
@@ -194,10 +196,10 @@
       <br><span id="output-ratio">&nbsp;</span>
     </p>
 
-    <image width="256" height="256" id="qrcode"></image>
+    <canvas id="qrcode"></canvas>
 
     <span id="qr-correct-level-container">
-      <label>QR code error correction threshold</label>
+      <label>Minimum QR code error correction threshold</label>
       <br>
       <input type="range" name="qr-correct-level" id="qr-correct-level" autocomplete="off" min="0" max="3" value="1">
     </span>
