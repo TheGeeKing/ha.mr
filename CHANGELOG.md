@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.1](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.1.0...ha.mr-v1.1.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* accept URLs without an explicit protocol ([ce52fa5](https://github.com/TheGeeKing/ha.mr/commit/ce52fa55a307ed3683b9a8c580f408875cf2aced))
+* preserve encoded query parameter values ([27be787](https://github.com/TheGeeKing/ha.mr/commit/27be7872d563fd5ce8b1549d70e7aa08f4a90454))
+* preserve equals signs in query parameter values ([c593840](https://github.com/TheGeeKing/ha.mr/commit/c5938402d18907c6bd06ca273e78a5d10f8ab102))
+* reject unsupported URL protocols and credentials ([57bd2f1](https://github.com/TheGeeKing/ha.mr/commit/57bd2f10fd4177f74cef62e205d435e7ed99d490))
+* use an absolute path for the main script ([f539a8c](https://github.com/TheGeeKing/ha.mr/commit/f539a8c6fe6519a1ac651cf6d382cbaf0a28c092))
+* wrap long redirect links on mobile ([14d2aff](https://github.com/TheGeeKing/ha.mr/commit/14d2affcf7cb81bdf47af20e0cfde08f41491d15))
+
+
+### Performance Improvements
+
+* switch QR generation to lean-qr ([5001c3d](https://github.com/TheGeeKing/ha.mr/commit/5001c3d27f0b17997fa66ba4709a223be1884a8c))
+
 ## [1.1.0](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.0.1...ha.mr-v1.1.0) (2026-08-18)
 
 
