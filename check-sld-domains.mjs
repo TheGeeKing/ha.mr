@@ -1,8 +1,8 @@
+import { Resolver } from "node:dns/promises";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { Resolver } from "node:dns/promises";
 
 const root = dirname(fileURLToPath(import.meta.url));
 
@@ -17,10 +17,49 @@ const TLD_WAVES = [
   ["org", "net"],
   [""],
   [
-    "edu", "gov", "mil", "io", "uk", "au", "jp", "ca", "de", "co", "us",
-    "fr", "it", "nl", "br", "in", "ru", "info", "me", "tv", "cc", "app",
-    "dev", "ai", "ch", "se", "no", "es", "pl", "nz", "kr", "mx", "ie",
-    "be", "at", "dk", "fi", "za", "id", "tw", "cn", "hk", "sg"
+    "edu",
+    "gov",
+    "mil",
+    "io",
+    "uk",
+    "au",
+    "jp",
+    "ca",
+    "de",
+    "co",
+    "us",
+    "fr",
+    "it",
+    "nl",
+    "br",
+    "in",
+    "ru",
+    "info",
+    "me",
+    "tv",
+    "cc",
+    "app",
+    "dev",
+    "ai",
+    "ch",
+    "se",
+    "no",
+    "es",
+    "pl",
+    "nz",
+    "kr",
+    "mx",
+    "ie",
+    "be",
+    "at",
+    "dk",
+    "fi",
+    "za",
+    "id",
+    "tw",
+    "cn",
+    "hk",
+    "sg"
   ]
 ];
 
@@ -58,13 +97,9 @@ if (options.only !== undefined && options.only !== "sld" && options.only !== "tl
 
 const concurrency = positiveInteger(options.concurrency, "--concurrency");
 const timeoutMs = positiveInteger(options.timeout, "--timeout");
-const limit = options.limit === undefined
-  ? Infinity
-  : positiveInteger(options.limit, "--limit");
+const limit = options.limit === undefined ? Infinity : positiveInteger(options.limit, "--limit");
 
-const dictionaries = JSON.parse(
-  readFileSync(join(root, "compression-dictionaries.json"), "utf8")
-);
+const dictionaries = JSON.parse(readFileSync(join(root, "compression-dictionaries.json"), "utf8"));
 const slds = Object.keys(dictionaries.sld)
   .filter(Boolean)
   .slice(0, Number.isFinite(limit) ? limit : undefined);
@@ -77,7 +112,7 @@ const resolvedHostnames = new Map();
 const inflightLookups = new Map();
 let completedLookups = 0;
 
-async function main () {
+async function main() {
   const report = {};
   if (options.only !== "sld") report.tld = await checkTlds();
   if (options.only !== "tld") report.sld = await checkSlds();
@@ -94,16 +129,14 @@ async function main () {
   }
 }
 
-async function checkTlds () {
+async function checkTlds() {
   const iana = await readIanaTlds();
   const dictionaryTlds = Object.keys(dictionaries.tld);
-  const fallbackCount = dictionaryTlds.filter(tld => tld === "").length;
+  const fallbackCount = dictionaryTlds.filter((tld) => tld === "").length;
   const tlds = dictionaryTlds.filter(Boolean);
-  const notUseful = tlds.filter(tld => !iana.names.has(tld)).sort();
-  const useful = tlds.filter(tld => iana.names.has(tld)).sort();
-  const missingFromDictionary = [...iana.names]
-    .filter(tld => !(tld in dictionaries.tld))
-    .sort();
+  const notUseful = tlds.filter((tld) => !iana.names.has(tld)).sort();
+  const useful = tlds.filter((tld) => iana.names.has(tld)).sort();
+  const missingFromDictionary = [...iana.names].filter((tld) => !(tld in dictionaries.tld)).sort();
   const total = tlds.length;
   const notUsefulPercent = total === 0 ? 0 : (notUseful.length / total) * 100;
 
@@ -120,7 +153,7 @@ async function checkTlds () {
   };
 }
 
-async function readIanaTlds () {
+async function readIanaTlds() {
   const response = await fetch(IANA_TLD_LIST_URL, {
     signal: AbortSignal.timeout(Math.max(timeoutMs, 15_000))
   });
@@ -130,17 +163,15 @@ async function readIanaTlds () {
 
   const text = await response.text();
   const lines = text.split(/\r?\n/);
-  const version = lines.find(line => line.startsWith("#"))?.replace(/^#\s*/, "") || "";
+  const version = lines.find((line) => line.startsWith("#"))?.replace(/^#\s*/, "") || "";
   const names = new Set(
-    lines
-      .filter(line => line && !line.startsWith("#"))
-      .map(line => line.trim().toLowerCase())
+    lines.filter((line) => line && !line.startsWith("#")).map((line) => line.trim().toLowerCase())
   );
   if (names.size === 0) throw new Error("IANA TLD list was empty");
   return { names, version };
 }
 
-async function checkSlds () {
+async function checkSlds() {
   const remaining = new Set(slds);
   const useful = new Map();
 
@@ -149,13 +180,15 @@ async function checkSlds () {
   for (const suffixes of TLD_WAVES) {
     if (remaining.size === 0) break;
 
-    await Promise.all([...remaining].map(async sld => {
-      const hostname = await findResolvingHostname(sld, suffixes);
-      if (!hostname) return;
-      useful.set(sld, hostname);
-      remaining.delete(sld);
-      logProgress(remaining.size, slds.length);
-    }));
+    await Promise.all(
+      [...remaining].map(async (sld) => {
+        const hostname = await findResolvingHostname(sld, suffixes);
+        if (!hostname) return;
+        useful.set(sld, hostname);
+        remaining.delete(sld);
+        logProgress(remaining.size, slds.length);
+      })
+    );
 
     logProgress(remaining.size, slds.length);
   }
@@ -179,14 +212,20 @@ async function checkSlds () {
   };
 }
 
-function printTldReport (report) {
+function printTldReport(report) {
   console.log(`Huffman TLD dictionary: ${report.total} names`);
   if (report.fallbackCount) {
-    console.log(`Empty fallback symbol:  ${report.fallbackCount} (not a TLD; used when the hostname TLD is unknown)`);
+    console.log(
+      `Empty fallback symbol:  ${report.fallbackCount} (not a TLD; used when the hostname TLD is unknown)`
+    );
   }
   console.log(`IANA root list:         ${report.ianaCount} (${report.ianaVersion})`);
-  console.log(`Useful (still in IANA): ${report.useful} (${(100 - report.notUsefulPercent).toFixed(1)}%)`);
-  console.log(`Not useful:             ${report.notUseful} (${report.notUsefulPercent.toFixed(1)}%)`);
+  console.log(
+    `Useful (still in IANA): ${report.useful} (${(100 - report.notUsefulPercent).toFixed(1)}%)`
+  );
+  console.log(
+    `Not useful:             ${report.notUseful} (${report.notUsefulPercent.toFixed(1)}%)`
+  );
 
   if (report.notUsefulNames.length > 0) {
     console.log("\nNot useful TLDs:");
@@ -203,10 +242,14 @@ function printTldReport (report) {
   }
 }
 
-function printSldReport (report) {
+function printSldReport(report) {
   console.log(`Huffman SLD dictionary: ${report.total} names`);
-  console.log(`Useful (DNS resolves):  ${report.useful} (${(100 - report.notUsefulPercent).toFixed(1)}%)`);
-  console.log(`Not useful:             ${report.notUseful} (${report.notUsefulPercent.toFixed(1)}%)`);
+  console.log(
+    `Useful (DNS resolves):  ${report.useful} (${(100 - report.notUsefulPercent).toFixed(1)}%)`
+  );
+  console.log(
+    `Not useful:             ${report.notUseful} (${report.notUsefulPercent.toFixed(1)}%)`
+  );
 
   if (report.notUsefulNames.length === 0) return;
 
@@ -216,7 +259,7 @@ function printSldReport (report) {
   }
 }
 
-async function findResolvingHostname (sld, suffixes) {
+async function findResolvingHostname(sld, suffixes) {
   const tried = new Set();
   for (const suffix of suffixes) {
     const hostname = hostnameFor(sld, suffix);
@@ -228,13 +271,13 @@ async function findResolvingHostname (sld, suffixes) {
   return "";
 }
 
-function hostnameFor (sld, suffix) {
+function hostnameFor(sld, suffix) {
   if (!suffix) return sld;
   if (sld === suffix || sld.endsWith(`.${suffix}`)) return sld;
   return `${sld}.${suffix}`;
 }
 
-async function lookupAddress (hostname) {
+async function lookupAddress(hostname) {
   if (resolvedHostnames.has(hostname)) return resolvedHostnames.get(hostname);
   if (inflightLookups.has(hostname)) return inflightLookups.get(hostname);
 
@@ -262,14 +305,12 @@ async function lookupAddress (hostname) {
   return lookup;
 }
 
-function logProgress (remaining, total) {
+function logProgress(remaining, total) {
   const checked = total - remaining;
-  process.stderr.write(
-    `\rChecked ${checked}/${total} SLDs (${completedLookups} DNS lookups)`
-  );
+  process.stderr.write(`\rChecked ${checked}/${total} SLDs (${completedLookups} DNS lookups)`);
 }
 
-function createLimiter (max) {
+function createLimiter(max) {
   let active = 0;
   const queue = [];
 
@@ -286,7 +327,7 @@ function createLimiter (max) {
       });
   };
 
-  return function limit (run) {
+  return function limit(run) {
     return new Promise((resolve, reject) => {
       queue.push({ run, resolve, reject });
       dequeue();
@@ -294,7 +335,7 @@ function createLimiter (max) {
   };
 }
 
-function positiveInteger (value, flag) {
+function positiveInteger(value, flag) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`${flag} must be a positive integer`);
@@ -302,7 +343,7 @@ function positiveInteger (value, flag) {
   return parsed;
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error(error);
   process.exit(1);
 });

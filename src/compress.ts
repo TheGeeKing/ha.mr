@@ -59,12 +59,12 @@ const subalphabets: string[] = [
  * @param {string[]} alphabet Ordered list of possible character sequences in output
  * @returns {string} String representing the input number
  */
-function numberToString (number: bigint, alphabet: string[]): string {
+function numberToString(number: bigint, alphabet: string[]): string {
   const alphabetSize = BigInt(alphabet.length);
   let string = "";
 
   while (number > 0) {
-    number --;
+    number--;
     string += alphabet[Number(number % alphabetSize)];
     number /= alphabetSize;
   }
@@ -78,7 +78,7 @@ function numberToString (number: bigint, alphabet: string[]): string {
  * @param {string[]} alphabet Ordered list of possible character sequences in `string`
  * @returns {BigInt} Decoded number
  */
-function stringToNumber (string: string, alphabet: string[]): bigint {
+function stringToNumber(string: string, alphabet: string[]): bigint {
   const alphabetSize = BigInt(alphabet.length);
   let number = 0n;
 
@@ -88,11 +88,11 @@ function stringToNumber (string: string, alphabet: string[]): bigint {
   // ordered with the longest sequences first (they are), and find the
   // first entry that matches the current position in the string.
   while (string) {
-    const digit = BigInt(alphabet.findIndex(c => string.endsWith(c)));
+    const digit = BigInt(alphabet.findIndex((c) => string.endsWith(c)));
     if (digit < 0n) throw `Invalid character: "${string.at(-1)}"`;
     number *= alphabetSize;
     number += digit;
-    number ++;
+    number++;
     const sequence = alphabet[Number(digit)];
     string = string.slice(0, -sequence.length);
   }
@@ -106,10 +106,10 @@ function stringToNumber (string: string, alphabet: string[]): bigint {
  * @param {string} sequence Binary sequence of "0"/"1" string characters
  * @returns {BigInt} Modified input number with binary sequence encoded
  */
-function huffmanEncode (number: bigint, sequence: string): bigint {
-  for (let i = sequence.length - 1; i >= 0; i --) {
+function huffmanEncode(number: bigint, sequence: string): bigint {
+  for (let i = sequence.length - 1; i >= 0; i--) {
     number <<= 1n;
-    if (sequence[i] === "1") number ++;
+    if (sequence[i] === "1") number++;
   }
   return number;
 }
@@ -121,7 +121,10 @@ function huffmanEncode (number: bigint, sequence: string): bigint {
  * @returns {{newNumber: BigInt, digit: string}}
  *  Modified input number after decoding, output string
  */
-function huffmanDecode (number: bigint, lookup: Record<string, string>): { newNumber: bigint; digit: string } {
+function huffmanDecode(
+  number: bigint,
+  lookup: Record<string, string>
+): { newNumber: bigint; digit: string } {
   let sequence = "";
   do {
     sequence += number & 1n;
@@ -138,10 +141,10 @@ function huffmanDecode (number: bigint, lookup: Record<string, string>): { newNu
  * @param {BigInt} number 128-bit IPv6 value
  * @returns {string} IPv6 address without square brackets
  */
-function numberToIPv6 (number: bigint): string {
+function numberToIPv6(number: bigint): string {
   const hextets = [];
 
-  for (let i = 0; i < 8; i ++) {
+  for (let i = 0; i < 8; i++) {
     hextets.unshift((number & 0xffffn).toString(16));
     number >>= 16n;
   }
@@ -150,7 +153,7 @@ function numberToIPv6 (number: bigint): string {
   let bestLength = 0;
   let start = -1;
 
-  for (let i = 0; i <= hextets.length; i ++) {
+  for (let i = 0; i <= hextets.length; i++) {
     if (i < hextets.length && hextets[i] === "0") {
       if (start === -1) start = i;
     } else if (start !== -1) {
@@ -178,17 +181,13 @@ function numberToIPv6 (number: bigint): string {
  * @param {string} input IPv6 address without square brackets
  * @returns {BigInt} 128-bit IPv6 value
  */
-function ipv6ToNumber (input: string): bigint {
+function ipv6ToNumber(input: string): bigint {
   const halves = input.split("::");
   const left = halves[0] ? halves[0].split(":") : [];
   const right = halves[1] ? halves[1].split(":") : [];
 
   const missing = 8 - left.length - right.length;
-  const hextets = [
-    ...left,
-    ...Array(missing).fill("0"),
-    ...right
-  ];
+  const hextets = [...left, ...Array(missing).fill("0"), ...right];
 
   let number = 0n;
 
@@ -206,7 +205,7 @@ function ipv6ToNumber (input: string): bigint {
  * @param {string[]} alphabet Output alphabet as array of characters/strings
  * @returns {string} Output payload (not a full link!)
  */
-export function compress (input: string, alphabet: string[]): string {
+export function compress(input: string, alphabet: string[]): string {
   let number = 1n;
 
   const hasProtocol = /^[A-Za-z][A-Za-z\d+.-]*:/.test(input);
@@ -234,7 +233,7 @@ export function compress (input: string, alphabet: string[]): string {
   const hasWWW = !isIPv6 && url.hostname.toLowerCase().startsWith("www.");
   if (hasWWW) hostname = hostname.slice(4);
 
-  const knownSLD = !isIPv6 ? sldList.find(c => hostname.endsWith(c)) || "" : "";
+  const knownSLD = !isIPv6 ? sldList.find((c) => hostname.endsWith(c)) || "" : "";
   const subdomain = hostname.slice(0, -knownSLD.length);
 
   // Read URL path, split it into segments
@@ -251,24 +250,23 @@ export function compress (input: string, alphabet: string[]): string {
   // character sets for individual segments and enables us to encode
   // only the transitions between segments. As-is, the system's a bit
   // clumsy, but it works.
-  const pathSegments = path.split("/")
-    .filter(c => c.length)
-    .map(c => ({ type: "path", value: c }));
+  const pathSegments = path
+    .split("/")
+    .filter((c) => c.length)
+    .map((c) => ({ type: "path", value: c }));
 
   // Add search/query parameters to path segments
   const queryParams = url.search
-    ? url.search.slice(1)
-      .split("&")
-      .flatMap(parameter => {
-        const separatorIndex = parameter.indexOf("=");
-        return separatorIndex === -1
-          ? [parameter, ""]
-          : [
-              parameter.slice(0, separatorIndex),
-              parameter.slice(separatorIndex + 1)
-            ];
-      })
-      .map(value => ({ type: "query", value }))
+    ? url.search
+        .slice(1)
+        .split("&")
+        .flatMap((parameter) => {
+          const separatorIndex = parameter.indexOf("=");
+          return separatorIndex === -1
+            ? [parameter, ""]
+            : [parameter.slice(0, separatorIndex), parameter.slice(separatorIndex + 1)];
+        })
+        .map((value) => ({ type: "query", value }))
     : [];
   pathSegments.push(...queryParams);
 
@@ -283,18 +281,14 @@ export function compress (input: string, alphabet: string[]): string {
   for (const segment of pathSegments) {
     segment.value = segment.value
       .split(reservedEscape)
-      .map((part, index) =>
-        index % 2 === 1
-          ? part
-          : encodeURI(decodeURI(part))
-      )
+      .map((part, index) => (index % 2 === 1 ? part : encodeURI(decodeURI(part))))
       .join("");
   }
 
   // Encode path following domain segment-by-segment, using best algorithm for each
   let lastSegmentType = pathSegments.at(-1)?.type;
   let queryParamIndex = 0;
-  for (let j = pathSegments.length - 1; j >= 0; j --) {
+  for (let j = pathSegments.length - 1; j >= 0; j--) {
     const segment = pathSegments[j];
     const firstIteration = j === pathSegments.length - 1;
     if (!firstIteration && queryParamIndex % 2 !== 1) {
@@ -303,26 +297,26 @@ export function compress (input: string, alphabet: string[]): string {
       //   second bit indicates whether we're skipping straight to the hash.
       number <<= 1n;
       if (lastSegmentType === "hash" && segment.type === "query") {
-        number ++;
+        number++;
       } else if (lastSegmentType === "hash" && segment.type === "path") {
-        number ++; // Second bit is 1
+        number++; // Second bit is 1
         number <<= 1n;
-        number ++;
+        number++;
       } else if (lastSegmentType !== segment.type) {
         // Second bit is 0
         number <<= 1n;
-        number ++;
+        number++;
       }
       lastSegmentType = segment.type;
     }
     if (segment.type === "query") {
-      queryParamIndex ++;
+      queryParamIndex++;
     }
     // Look for smallest subalphabet that fits this path segment
     let subalphabetIndex = -1;
     let subalphabet = null;
-    for (let i = 0; i < subalphabets.length; i ++) {
-      if (!Array.from(segment.value).some(c => !subalphabets[i].includes(c))) {
+    for (let i = 0; i < subalphabets.length; i++) {
+      if (!Array.from(segment.value).some((c) => !subalphabets[i].includes(c))) {
         subalphabet = subalphabets[i];
         subalphabetIndex = i;
         break;
@@ -330,7 +324,7 @@ export function compress (input: string, alphabet: string[]): string {
     }
     // Compute number after Huffman coding
     let huffmanNumber = firstIteration ? number : huffmanEncode(number, pathEncode["#"]);
-    for (let i = segment.value.length - 1; i >= 0; i --) {
+    for (let i = segment.value.length - 1; i >= 0; i--) {
       if (segment.value[i - 2] === "%") {
         const byte = parseInt(segment.value.slice(i - 1, i + 1), 16);
         huffmanNumber *= 256n;
@@ -400,18 +394,18 @@ export function compress (input: string, alphabet: string[]): string {
     number += ipv6Number;
 
     // An END as the first hostname symbol marks an IPv6 literal.
-    number = huffmanEncode(number, domainEncode["END"]);
+    number = huffmanEncode(number, domainEncode.END);
   } else if (!knownSLD) {
     // Write stopping token only if path follows
-    if (pathSegments.length > 0) number = huffmanEncode(number, domainEncode["END"]);
-    for (let i = hostname.length - 1; i >= 0; i --) {
+    if (pathSegments.length > 0) number = huffmanEncode(number, domainEncode.END);
+    for (let i = hostname.length - 1; i >= 0; i--) {
       number = huffmanEncode(number, domainEncode[hostname[i]]);
     }
   } else {
     // Encode subdomain
     if (subdomain) {
       // Write stopping token only if path follows
-      if (pathSegments.length > 0) number = huffmanEncode(number, domainEncode["END"]);
+      if (pathSegments.length > 0) number = huffmanEncode(number, domainEncode.END);
       for (let i = subdomain.length - 1; i >= 0; i--) {
         number = huffmanEncode(number, domainEncode[subdomain[i]]);
       }
@@ -452,7 +446,7 @@ export function compress (input: string, alphabet: string[]): string {
   if (port) number += 1n;
 
   // Encode version number
-  for (let i = 0; i < VERSION; i ++) {
+  for (let i = 0; i < VERSION; i++) {
     number <<= 1n;
     number += 1n;
   }
@@ -468,13 +462,11 @@ export function compress (input: string, alphabet: string[]): string {
  * @param {string[]} alphabet Ordered alphabet used by payload
  * @returns {string} Full link containing payload contents.
  */
-export function decompress (input: string, alphabet: string[]): string {
+export function decompress(input: string, alphabet: string[]): string {
   let number = stringToNumber(input, alphabet);
 
   // Version number - currently unused
-  let version = 0;
   while (number & 1n) {
-    version ++;
     number >>= 1n;
   }
   number >>= 1n;
@@ -482,7 +474,7 @@ export function decompress (input: string, alphabet: string[]): string {
   // Decode port number
   const hasPort = number & 1n;
   number >>= 1n;
-  let port;
+  let port: bigint | undefined;
   if (hasPort) {
     port = number % 65536n;
     number /= 65536n;
@@ -573,7 +565,7 @@ export function decompress (input: string, alphabet: string[]): string {
       } else {
         path += "&";
       }
-      queryParamIndex ++;
+      queryParamIndex++;
     }
     // Get path segment variant
     const variant = Number(number % BigInt(subalphabets.length + 1));
@@ -605,10 +597,12 @@ export function decompress (input: string, alphabet: string[]): string {
     // middle of decoding a query parameter key/value pair, in which
     // case switching to the hash value doesn't make sense.
     if (queryParamIndex % 2) continue;
-    if (number & 1n) { // Changing segment type?
+    if (number & 1n) {
+      // Changing segment type?
       if (currentSegmentType === "path") {
         number >>= 1n;
-        if (number & 1n) { // Skipping to hash?
+        if (number & 1n) {
+          // Skipping to hash?
           currentSegmentType = "hash";
         } else {
           currentSegmentType = "query";
@@ -624,16 +618,17 @@ export function decompress (input: string, alphabet: string[]): string {
   const pathBeforeQuery = pathSplitIndex === -1 ? path : path.slice(0, pathSplitIndex);
   const pathFromQuery = pathSplitIndex === -1 ? "" : path.slice(pathSplitIndex);
 
-  let output = ""
-    + (isHTTPS ? "https://" : "http://")
-    + (hasWWW ? "www." : "")
-    + subdomain
-    + domain
-    + (tld ? "." + tld : "")
-    + (hasPort ? ":" + port : "")
-    + pathBeforeQuery
-    + indexSuffix
-    + pathFromQuery;
+  const output =
+    "" +
+    (isHTTPS ? "https://" : "http://") +
+    (hasWWW ? "www." : "") +
+    subdomain +
+    domain +
+    (tld ? `.${tld}` : "") +
+    (hasPort ? `:${port}` : "") +
+    pathBeforeQuery +
+    indexSuffix +
+    pathFromQuery;
 
   return output;
 }

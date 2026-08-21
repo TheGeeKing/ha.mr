@@ -9,7 +9,7 @@ export interface CliIO {
 /**
  * Runs the hamr command with runtime-independent arguments and output.
  */
-export function runCli (args: string[], io: CliIO): number {
+export function runCli(args: string[], io: CliIO): number {
   const input = args[0]?.trim();
   const alphabetName = args[1]?.trim() || "ascii";
   const command = args[2]?.trim() || "encode";
@@ -37,7 +37,9 @@ export function runCli (args: string[], io: CliIO): number {
   if (payload || command === "decode") {
     const isQRCode = payload.startsWith("/");
     payload = payload.slice(1);
-    const isEmoji = Array.from(payload).some(character => !outputAlphabetASCII.includes(character));
+    const isEmoji = Array.from(payload).some(
+      (character) => !outputAlphabetASCII.includes(character)
+    );
     const alphabet = isQRCode
       ? outputAlphabetQR
       : isEmoji
@@ -61,8 +63,8 @@ export function runCli (args: string[], io: CliIO): number {
   }
 
   const compressed = compress(input, alphabet);
-  io.writeOutput(alphabetName === "qr"
-    ? `HTTP://HA.MR/${compressed}`
-    : `http://ha.mr#${compressed}`);
+  io.writeOutput(
+    alphabetName === "qr" ? `HTTP://HA.MR/${compressed}` : `http://ha.mr#${compressed}`
+  );
   return 0;
 }

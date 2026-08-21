@@ -23,11 +23,10 @@ if (process.env.HAMR_NATIVE_PATH) {
 }
 
 for (const runtime of runtimes) {
-  const execute = (args) => execFileSync(
-    runtime.command,
-    [...runtime.prefixArguments, ...args],
-    { encoding: "utf8" }
-  ).trim();
+  const execute = (args) =>
+    execFileSync(runtime.command, [...runtime.prefixArguments, ...args], {
+      encoding: "utf8"
+    }).trim();
 
   test(`${runtime.name} CLI compresses and decompresses ASCII links`, () => {
     const compressed = execute(["https://www.example.com"]);
@@ -61,19 +60,14 @@ for (const runtime of runtimes) {
   });
 
   test(`${runtime.name} CLI emits emoji payloads`, () => {
-    assert.equal(
-      execute(["https://www.example.com", "emoji"]),
-      "http://ha.mr#♐📯"
-    );
+    assert.equal(execute(["https://www.example.com", "emoji"]), "http://ha.mr#♐📯");
   });
 
-  test(
-    `${runtime.name} CLI decodes emoji payloads`,
-    { skip: runtime.name === "QuickJS" && process.platform === "win32" },
-    () => {
-      assert.equal(execute(["http://ha.mr#♐📯"]), "https://www.example.com");
-    }
-  );
+  test(`${runtime.name} CLI decodes emoji payloads`, {
+    skip: runtime.name === "QuickJS" && process.platform === "win32"
+  }, () => {
+    assert.equal(execute(["http://ha.mr#♐📯"]), "https://www.example.com");
+  });
 
   test(`${runtime.name} CLI reports usage when input is missing`, () => {
     const result = spawnSync(runtime.command, runtime.prefixArguments, { encoding: "utf8" });

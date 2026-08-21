@@ -7,7 +7,9 @@
     "build": "npm run generate:dictionaries && tsc && node copy-static.mjs && esbuild dist/main.js dist/compress.js dist/alphabets.js dist/compression-dictionaries.js --minify --charset=utf8 --allow-overwrite --outdir=dist --format=esm && esbuild lean-qr --bundle --minify --format=iife --global-name=LeanQr --outfile=dist/lean-qr.js",
     "build:cli:bundle": "esbuild src/quickjs.ts --bundle --minify --platform=neutral --main-fields=module,main --format=esm --external:qjs:std --outfile=dist/hamr.quickjs.js",
     "build:cli:local": "npm run build:cli:bundle && node build-cli.mjs",
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit && biome check .",
+    "format": "biome check --write .",
+    "lint": "biome check .",
     "check:slds": "node check-sld-domains.mjs",
     "check:tlds": "node check-sld-domains.mjs --only tld",
     "dev:quickjs": "npm run build:cli:bundle && qjs dist/hamr.quickjs.js",
@@ -19,6 +21,7 @@
     "whatwg-url": "^11.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.9",
     "@types/node": "^26.2.0",
     "@types/whatwg-url": "^13.0.0",
     "esbuild": "^0.28.2",

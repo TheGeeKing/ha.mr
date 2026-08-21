@@ -7,5 +7,5 @@ declare module "qjs:std" {
 
   export const err: OutputStream;
   export const out: OutputStream;
-  export function exit (exitCode: number): never;
+  export function exit(exitCode: number): never;
 }

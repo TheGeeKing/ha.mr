@@ -1,13 +1,11 @@
+import { outputAlphabetASCII, outputAlphabetEmoji, outputAlphabetQR } from "./alphabets.js";
 import { compress, decompress } from "./compress.js";
-import {
-  outputAlphabetASCII,
-  outputAlphabetQR,
-  outputAlphabetEmoji
-} from "./alphabets.js";
 
 let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
-  console.log(`This page is intended to be used on the ha.mr domain. You are currently on ${domain}.`);
+  console.log(
+    `This page is intended to be used on the ha.mr domain. You are currently on ${domain}.`
+  );
 }
 const webPort = window.location.port;
 if (webPort && webPort !== "80" && webPort !== "443") {
@@ -41,12 +39,12 @@ for (const setting of Object.keys(settingsElements) as SettingName[]) {
   });
 }
 
-function countSymbols (string: string, alphabet: string[]): number {
+function countSymbols(string: string, alphabet: string[]): number {
   let count = 0;
   while (string) {
-    const symbol = alphabet.find(c => string.endsWith(c));
+    const symbol = alphabet.find((c) => string.endsWith(c));
     string = string.slice(0, symbol ? -symbol.length : -1);
-    count ++;
+    count++;
   }
   return count;
 }
@@ -67,7 +65,7 @@ qrCodeCorrectionLevelElement.addEventListener("input", () => {
 let qrCodeLibraryPromise: Promise<typeof import("lean-qr")> | undefined;
 let outputRevision = 0;
 
-function loadQrCodeLibrary (): Promise<typeof import("lean-qr")> {
+function loadQrCodeLibrary(): Promise<typeof import("lean-qr")> {
   qrCodeLibraryPromise ??= new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = "lean-qr.js";
@@ -79,7 +77,7 @@ function loadQrCodeLibrary (): Promise<typeof import("lean-qr")> {
   return qrCodeLibraryPromise;
 }
 
-async function updateOutput (): Promise<void> {
+async function updateOutput(): Promise<void> {
   const revision = ++outputRevision;
   const input = inputLinkElement.value.trim();
   try {
@@ -93,8 +91,8 @@ async function updateOutput (): Promise<void> {
       inputNormalized = input.slice(7);
     }
     let excessiveParams = false;
-    if (URL.canParse("http://" + inputNormalized)) {
-      const url = new URL("http://" + inputNormalized);
+    if (URL.canParse(`http://${inputNormalized}`)) {
+      const url = new URL(`http://${inputNormalized}`);
       if (url.searchParams.size > 1) {
         excessiveParams = true;
       }
@@ -137,21 +135,17 @@ async function updateOutput (): Promise<void> {
         qrCodeLibrary.correction.H
       ];
       const minimumCorrectionLevel =
-        correctionLevels[Number(qrCodeCorrectionLevelElement.value)]
-        ?? qrCodeLibrary.correction.M;
-      const qrCode = qrCodeLibrary.generate(
-        qrCodeLibrary.mode.alphaNumeric(qrCodeLink),
-        {
-          minVersion: 1,
-          maxVersion: 40,
-          minCorrectionLevel: minimumCorrectionLevel,
-          maxCorrectionLevel: qrCodeLibrary.correction.H
-        }
-      );
+        correctionLevels[Number(qrCodeCorrectionLevelElement.value)] ?? qrCodeLibrary.correction.M;
+      const qrCode = qrCodeLibrary.generate(qrCodeLibrary.mode.alphaNumeric(qrCodeLink), {
+        minVersion: 1,
+        maxVersion: 40,
+        minCorrectionLevel: minimumCorrectionLevel,
+        maxCorrectionLevel: qrCodeLibrary.correction.H
+      });
 
       qrCode.toCanvas(qrCodeCanvas, {
-        on: [0x00, 0x00, 0x00, 0xFF],
-        off: [0xFF, 0xFF, 0xFF, 0xFF],
+        on: [0x00, 0x00, 0x00, 0xff],
+        off: [0xff, 0xff, 0xff, 0xff],
         pad: 2
       });
       qrCodeCanvas.style.width = `${(qrCode.size + 8) * 8}px`;
@@ -181,7 +175,7 @@ const redirectContainerElement = requiredElement<HTMLElement>("#redirect-contain
 const redirectLinkElement = requiredElement<HTMLAnchorElement>("#redirect-link");
 const loaderElement = requiredElement<HTMLElement>("#loader");
 
-function handleRedirectPrompt (target: string): void {
+function handleRedirectPrompt(target: string): void {
   loaderElement.style.display = "none";
   redirectContainerElement.style.display = "flex";
   redirectLinkElement.textContent = target;
@@ -203,7 +197,7 @@ inputLinkElement.addEventListener("input", () => {
     // Remove all whitespace - we never use whitespace when encoding hash values
     payload = payload.replaceAll(" ", "");
     // Check if input is pure ASCII - potentially unreliable?
-    const useEmoji = Array.from(payload).some(c => !outputAlphabetASCII.includes(c));
+    const useEmoji = Array.from(payload).some((c) => !outputAlphabetASCII.includes(c));
     alphabet = useEmoji ? outputAlphabetEmoji : outputAlphabetASCII;
   } else {
     // If no hash value, we're likely reading a QR code
@@ -212,7 +206,7 @@ inputLinkElement.addEventListener("input", () => {
     alphabet = outputAlphabetQR;
   }
 
-  if (payload && payload.trim()) {
+  if (payload?.trim()) {
     try {
       const target = decompress(payload, alphabet);
       handleRedirectPrompt(target);
@@ -230,5 +224,4 @@ inputLinkElement.addEventListener("input", () => {
   requiredElement<HTMLElement>("#content").style.pointerEvents = "auto";
   requiredElement<HTMLElement>("header").style.opacity = "1";
   requiredElement<HTMLElement>("header").style.pointerEvents = "auto";
-
 })();
