@@ -28,7 +28,10 @@ const roundTripCases = [
   ["https://my-site.example.com", "https://my-site.example.com"],
   ["https://a1b2.example.com", "https://a1b2.example.com"],
   ["https://xn--mnchen-3ya.example.com", "https://xn--mnchen-3ya.example.com"],
-  ["https://münchen.example.com", "https://xn--mnchen-3ya.example.com"]
+  ["https://münchen.example.com", "https://xn--mnchen-3ya.example.com"],
+  ["https://example.com/a_b-c.d", "https://example.com/a_b-c.d"],
+  ["http://example.com/a_b-c.d", "http://example.com/a_b-c.d"],
+  ["https://www.example.com/a_b-c.d", "https://www.example.com/a_b-c.d"]
 ];
 
 const alphabets = [
