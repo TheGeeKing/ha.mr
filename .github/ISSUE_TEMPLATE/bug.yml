@@ -1,0 +1,64 @@
+name: Bug
+description: Report something that is broken.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues before filing a new one. See [CONTRIBUTING.md](../../blob/HEAD/CONTRIBUTING.md).
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Existing issues
+      options:
+        - label: I have searched existing issues
+          required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: Where did you see this?
+      options:
+        - Website
+        - CLI (Node)
+        - CLI (QuickJS)
+        - Docker image
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser or runtime, and version if relevant.
+      placeholder: |
+        - OS:
+        - Browser / runtime:
+        - Version:
+    validations:
+      required: false

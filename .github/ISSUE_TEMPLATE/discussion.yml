@@ -1,0 +1,29 @@
+name: Discussion
+description: Ask a question or float an idea before opening a pull request.
+title: "[Discussion] "
+labels: ["discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for questions and ideas **before** opening a pull request. Search existing issues first. See [CONTRIBUTING.md](../../blob/HEAD/CONTRIBUTING.md).
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Existing issues
+      options:
+        - label: I have searched existing issues
+          required: true
+  - type: textarea
+    id: topic
+    attributes:
+      label: What do you want to discuss?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Links, examples, or anything else that helps.
+    validations:
+      required: false
