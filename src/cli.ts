@@ -22,12 +22,17 @@ export function runCli(args: string[], io: CliIO): number {
 
   let payload = "";
   const normalizedInput = input.toLowerCase();
+  let remainder = "";
   if (normalizedInput.startsWith("http://ha.mr")) {
-    payload = input.slice(12);
+    remainder = input.slice(12);
   } else if (normalizedInput.startsWith("https://ha.mr")) {
-    payload = input.slice(13);
+    remainder = input.slice(13);
   } else if (normalizedInput.startsWith("ha.mr")) {
-    payload = input.slice(5);
+    remainder = input.slice(5);
+  }
+
+  if ((remainder.startsWith("#") || remainder.startsWith("/")) && remainder.length > 1) {
+    payload = remainder;
   } else if (command === "decode") {
     const hashPosition = input.indexOf("#");
     payload = input.slice(hashPosition);
