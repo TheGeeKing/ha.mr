@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.2](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.1.1...ha.mr-v1.1.2) (2026-08-21)
+
+
+### Bug Fixes
+
+* decode only real ha.mr payloads ([#14](https://github.com/TheGeeKing/ha.mr/issues/14)) ([f72640a](https://github.com/TheGeeKing/ha.mr/commit/f72640ac7b72506e22b1517fe8bf34f842905285)), closes [#11](https://github.com/TheGeeKing/ha.mr/issues/11)
+* reject illegal hostname characters ([#13](https://github.com/TheGeeKing/ha.mr/issues/13)) ([8145ec2](https://github.com/TheGeeKing/ha.mr/commit/8145ec25de2e8342e85b5532dacc8a94feee6ea5)), closes [#9](https://github.com/TheGeeKing/ha.mr/issues/9)
+* stop emoji payloads failing on suffix collisions ([#15](https://github.com/TheGeeKing/ha.mr/issues/15)) ([093ab87](https://github.com/TheGeeKing/ha.mr/commit/093ab879260843290bccf48bceb798ec03d4b82c))
+
+
+### Performance Improvements
+
+* minify served HTML, CSS, and JavaScript ([5cb2876](https://github.com/TheGeeKing/ha.mr/commit/5cb28768a4d7070ffedc4a238e80be1f8c48aa1e))
+
 ## [1.1.1](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.1.0...ha.mr-v1.1.1) (2026-08-20)
 
 
