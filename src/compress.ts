@@ -200,6 +200,13 @@ function ipv6ToNumber(input: string): bigint {
 }
 
 /**
+ * Returns whether `hostname` is a DNS name of letters, digits, and internal hyphens.
+ */
+function isValidDnsHostname(hostname: string): boolean {
+  return hostname.split(".").every((label) => /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label));
+}
+
+/**
  * Compresses the input link and encodes it to the given alphabet.
  * @param {string} input Link to compress
  * @param {string[]} alphabet Output alphabet as array of characters/strings
@@ -221,6 +228,9 @@ export function compress(input: string, alphabet: string[]): string {
 
   let hostname = url.hostname.toLowerCase();
   const isIPv6 = hostname.startsWith("[") && hostname.endsWith("]");
+  if (!isIPv6 && !isValidDnsHostname(hostname)) {
+    throw new Error(`Invalid hostname: ${url.hostname}`);
+  }
   const port = BigInt(url.port);
   const lastLabel = hostname.split(".").at(-1)?.toLowerCase();
   const tld = !isIPv6 && hostname.includes(".") && lastLabel ? lastLabel : "";

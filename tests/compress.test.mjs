@@ -24,7 +24,11 @@ const roundTripCases = [
     "https://example.com/a%3fb%23c?redirect=https%3a%2f%2fother.example%2fa%3fb%3dc%26d%3de#done"
   ],
   ["https://example.com/path#section?x=y&z", "https://example.com/path#section?x=y&z"],
-  ["https://[2001:db8::1]/path", "https://[2001:db8::1]/path"]
+  ["https://[2001:db8::1]/path", "https://[2001:db8::1]/path"],
+  ["https://my-site.example.com", "https://my-site.example.com"],
+  ["https://a1b2.example.com", "https://a1b2.example.com"],
+  ["https://xn--mnchen-3ya.example.com", "https://xn--mnchen-3ya.example.com"],
+  ["https://münchen.example.com", "https://xn--mnchen-3ya.example.com"]
 ];
 
 const alphabets = [
@@ -53,6 +57,26 @@ test("compression rejects unsupported and malformed URLs", () => {
 
   for (const url of invalidUrls) {
     assert.throws(() => compress(url, outputAlphabetASCII));
+  }
+});
+
+test("compression rejects hostnames with illegal DNS characters", () => {
+  const invalidHosts = [
+    "https://under_score.example.com/",
+    "https://star*host.example.com/",
+    "https://bang!host.example.com/",
+    "https://dollar$host.example.com/",
+    "https://ampersand&host.example.com/",
+    "https://foo%21bar.example.com/",
+    "https://-leading.example.com/",
+    "https://trailing-.example.com/"
+  ];
+
+  for (const url of invalidHosts) {
+    assert.throws(() => compress(url, outputAlphabetASCII), {
+      name: "Error",
+      message: /invalid hostname/i
+    });
   }
 });
 
