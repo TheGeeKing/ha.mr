@@ -1,5 +1,7 @@
 # ha.mr
 
+> This is a maintained fork of [p2r3/ha.mr](https://github.com/p2r3/ha.mr). It tracks upstream and adds extra features.
+
 Compresses links and optimizes QR codes entirely in the browser, without a back-end database.
 
 ## Production deployment
