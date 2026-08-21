@@ -53,6 +53,53 @@ const subalphabets: string[] = [
  *  2. dividing the number by 3. (number /= 3n)
  */
 
+type AlphabetIndex = {
+  collisions: { stem: string; unsafe: string }[];
+};
+
+const alphabetIndexCache = new WeakMap<string[], AlphabetIndex>();
+
+/**
+ * Indexes which shorter alphabet entries can be swallowed by a longer one.
+ * `stem` is the extra prefix of the longer entry; if the string so far ends
+ * with `stem`, appending `unsafe` would decode as that longer entry.
+ */
+function alphabetIndex(alphabet: string[]): AlphabetIndex {
+  const cached = alphabetIndexCache.get(alphabet);
+  if (cached) return cached;
+
+  const symbols = new Set(alphabet);
+  const collisions: { stem: string; unsafe: string }[] = [];
+  for (const sequence of alphabet) {
+    for (let suffixLength = 1; suffixLength < sequence.length; suffixLength++) {
+      const unsafe = sequence.slice(-suffixLength);
+      if (!symbols.has(unsafe)) continue;
+      collisions.push({ stem: sequence.slice(0, -suffixLength), unsafe });
+    }
+  }
+
+  const index = { collisions };
+  alphabetIndexCache.set(alphabet, index);
+  return index;
+}
+
+/**
+ * Symbols that remain the longest suffix after being appended to `prefix`.
+ * Restricting encoding to these choices prevents two shorter emoji from being
+ * decoded as one longer alphabet entry.
+ */
+function safeAlphabetChoices(prefix: string, alphabet: string[]): string[] {
+  const { collisions } = alphabetIndex(alphabet);
+  if (collisions.length === 0) return alphabet;
+
+  const unsafe = new Set<string>();
+  for (const collision of collisions) {
+    if (prefix.endsWith(collision.stem)) unsafe.add(collision.unsafe);
+  }
+  if (unsafe.size === 0) return alphabet;
+  return alphabet.filter((symbol) => !unsafe.has(symbol));
+}
+
 /**
  * Encodes a number into a string of the given alphabet.
  * @param {BigInt} number Number to encode
@@ -60,12 +107,14 @@ const subalphabets: string[] = [
  * @returns {string} String representing the input number
  */
 function numberToString(number: bigint, alphabet: string[]): string {
-  const alphabetSize = BigInt(alphabet.length);
   let string = "";
 
   while (number > 0) {
     number--;
-    string += alphabet[Number(number % alphabetSize)];
+    const choices = safeAlphabetChoices(string, alphabet);
+    if (choices.length === 0) throw new Error("No uniquely decodable alphabet symbols");
+    const alphabetSize = BigInt(choices.length);
+    string += choices[Number(number % alphabetSize)];
     number /= alphabetSize;
   }
 
@@ -79,7 +128,6 @@ function numberToString(number: bigint, alphabet: string[]): string {
  * @returns {BigInt} Decoded number
  */
 function stringToNumber(string: string, alphabet: string[]): bigint {
-  const alphabetSize = BigInt(alphabet.length);
   let number = 0n;
 
   // Not all alphabets are 1 byte per character. For example, the emoji
@@ -87,14 +135,19 @@ function stringToNumber(string: string, alphabet: string[]): bigint {
   // combinations. To account for this, we assume the alphabets are
   // ordered with the longest sequences first (they are), and find the
   // first entry that matches the current position in the string.
+  // Encoding only appends a symbol when it is that longest suffix, so
+  // the digit is recovered from the same context-dependent safe alphabet.
   while (string) {
-    const digit = BigInt(alphabet.findIndex((c) => string.endsWith(c)));
+    const sequence = alphabet.find((c) => string.endsWith(c));
+    if (!sequence) throw `Invalid character: "${string.at(-1)}"`;
+    const prefix = string.slice(0, -sequence.length);
+    const choices = safeAlphabetChoices(prefix, alphabet);
+    const digit = BigInt(choices.indexOf(sequence));
     if (digit < 0n) throw `Invalid character: "${string.at(-1)}"`;
-    number *= alphabetSize;
+    number *= BigInt(choices.length);
     number += digit;
     number++;
-    const sequence = alphabet[Number(digit)];
-    string = string.slice(0, -sequence.length);
+    string = prefix;
   }
 
   return number;
