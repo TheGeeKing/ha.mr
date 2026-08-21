@@ -35,6 +35,21 @@ for (const runtime of runtimes) {
     assert.equal(execute([compressed]), "https://www.example.com");
   });
 
+  test(`${runtime.name} CLI compresses hosts that only start with ha.mr`, () => {
+    const compressed = execute(["http://ha.mrock.com"]);
+
+    assert.match(compressed, /^http:\/\/ha\.mr#./);
+    assert.equal(execute([compressed]), "http://ha.mrock.com");
+  });
+
+  test(`${runtime.name} CLI compresses the ha.mr site URL instead of decoding it`, () => {
+    const compressed = execute(["https://ha.mr/"]);
+
+    assert.notEqual(compressed, "http://l.us");
+    assert.match(compressed, /^http:\/\/ha\.mr#./);
+    assert.equal(execute([compressed]), "https://ha.mr");
+  });
+
   test(`${runtime.name} CLI compresses and decompresses QR links`, () => {
     const compressed = execute(["https://www.example.com", "qr"]);
 
