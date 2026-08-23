@@ -252,7 +252,9 @@
       <p id="rewrite-transform">Transformed as <span id="rewrite-to"></span></p>
       This site supports a shorter equivalent of this link. The compressed
       payload stores that shorter URL, so decompressing will not restore the
-      original (tracking parameters, path slugs, and similar extra data are dropped).
+      original. Unconsumed query parameters, including service-specific values
+      such as YouTube feature or list, may be preserved. What is lost is path
+      and service-specific data that the rewritten native URL may omit.
       <br>
       <button type="button" id="keep-lossless">Keep lossless method</button>
     </details>
