@@ -24,6 +24,9 @@ test("build contains every deployable artifact referenced by HTML", () => {
   const html = readFileSync(join(root, "dist", "404.html"), "utf8");
   assert.doesNotMatch(html, /src="lean-qr\.js"/);
   assert.match(html, /src="\/main\.js"/);
+  assert.match(html, /id="qr-correct-level-ticks"/);
+  assert.match(html, /Each stop is a QR size/);
+  assert.doesNotMatch(html, /Minimum QR code error correction threshold/);
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
   assert.match(main, /\.src="lean-qr\.js"/);
