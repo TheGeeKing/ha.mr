@@ -1,5 +1,13 @@
 import { outputAlphabetASCII, outputAlphabetEmoji, outputAlphabetQR } from "./alphabets.js";
 import { compress, decompress } from "./compress.js";
+import {
+  CORRECTION_LEVELS,
+  type CorrectionFit,
+  type CorrectionLetter,
+  type CorrectionNotch,
+  correctionNotchesFromFits,
+  pickCorrectionNotchIndex
+} from "./qr-correction-notches.js";
 
 let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
@@ -57,13 +65,72 @@ const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
 const qrCodeCanvas = requiredElement<HTMLCanvasElement>("#qrcode");
 const qrCodeCorrectionLevelContainer = requiredElement<HTMLElement>("#qr-correct-level-container");
 const qrCodeCorrectionLevelElement = requiredElement<HTMLInputElement>("#qr-correct-level");
+const qrCodeCorrectionLevelTicks = requiredElement<HTMLElement>("#qr-correct-level-ticks");
+
+let requestedCorrectionFloor: CorrectionLetter = "M";
+let correctionNotches: CorrectionNotch[] = [];
 
 qrCodeCorrectionLevelElement.addEventListener("input", () => {
+  const notch = correctionNotches[Number(qrCodeCorrectionLevelElement.value)];
+  if (notch) {
+    requestedCorrectionFloor = notch.level;
+  }
   updateOutput();
 });
 
 let qrCodeLibraryPromise: Promise<typeof import("lean-qr")> | undefined;
 let outputRevision = 0;
+
+function qrVersionFromSize(size: number): number {
+  return (size - 17) / 4;
+}
+
+function correctionNotchesForPayload(
+  qrCodeLibrary: typeof import("lean-qr"),
+  qrCodeLink: string
+): CorrectionNotch[] {
+  const encoded = qrCodeLibrary.mode.alphaNumeric(qrCodeLink);
+  const fits: CorrectionFit[] = [];
+  for (const level of CORRECTION_LEVELS) {
+    try {
+      const qrCode = qrCodeLibrary.generate(encoded, {
+        minVersion: 1,
+        maxVersion: 40,
+        minCorrectionLevel: qrCodeLibrary.correction[level],
+        maxCorrectionLevel: qrCodeLibrary.correction[level]
+      });
+      fits.push({ level, version: qrVersionFromSize(qrCode.size) });
+    } catch {
+      // This exact correction level cannot encode the payload.
+    }
+  }
+  return correctionNotchesFromFits(fits);
+}
+
+function syncCorrectionLevelControl(notches: CorrectionNotch[], selectedIndex: number): void {
+  correctionNotches = notches;
+  qrCodeCorrectionLevelElement.min = "0";
+  qrCodeCorrectionLevelElement.max = String(Math.max(notches.length - 1, 0));
+  qrCodeCorrectionLevelElement.step = "1";
+  qrCodeCorrectionLevelElement.value = String(selectedIndex);
+  qrCodeCorrectionLevelElement.disabled = notches.length < 2;
+  const selected = notches[selectedIndex];
+  if (selected) {
+    qrCodeCorrectionLevelElement.setAttribute(
+      "aria-valuetext",
+      `${selected.level}, version ${selected.version}`
+    );
+  }
+  qrCodeCorrectionLevelTicks.style.justifyContent = notches.length < 2 ? "center" : "space-between";
+  qrCodeCorrectionLevelTicks.replaceChildren(
+    ...notches.map((notch) => {
+      const tick = document.createElement("span");
+      tick.textContent = notch.level;
+      tick.title = `Version ${notch.version}`;
+      return tick;
+    })
+  );
+}
 
 function loadQrCodeLibrary(): Promise<typeof import("lean-qr")> {
   qrCodeLibraryPromise ??= new Promise((resolve, reject) => {
@@ -124,23 +191,25 @@ async function updateOutput(): Promise<void> {
       if (!settings.qr || revision !== outputRevision) return;
 
       qrCodeCanvas.style.display = "inline";
-      qrCodeCorrectionLevelContainer.style.display = "inline";
+      qrCodeCorrectionLevelContainer.style.display = "block";
 
       const qrCodeDomain = domain.toUpperCase();
       const qrCodeLink = `HTTP://${qrCodeDomain}/${compress(input, outputAlphabetQR)}`;
-      const correctionLevels = [
-        qrCodeLibrary.correction.L,
-        qrCodeLibrary.correction.M,
-        qrCodeLibrary.correction.Q,
-        qrCodeLibrary.correction.H
-      ];
-      const minimumCorrectionLevel =
-        correctionLevels[Number(qrCodeCorrectionLevelElement.value)] ?? qrCodeLibrary.correction.M;
+      const notches = correctionNotchesForPayload(qrCodeLibrary, qrCodeLink);
+      if (notches.length === 0) {
+        throw new Error("QR code does not fit");
+      }
+      const selectedIndex = pickCorrectionNotchIndex(notches, requestedCorrectionFloor);
+      syncCorrectionLevelControl(notches, selectedIndex);
+      const selected = notches[selectedIndex];
+      if (!selected) {
+        throw new Error("QR code does not fit");
+      }
       const qrCode = qrCodeLibrary.generate(qrCodeLibrary.mode.alphaNumeric(qrCodeLink), {
         minVersion: 1,
         maxVersion: 40,
-        minCorrectionLevel: minimumCorrectionLevel,
-        maxCorrectionLevel: qrCodeLibrary.correction.H
+        minCorrectionLevel: qrCodeLibrary.correction[selected.level],
+        maxCorrectionLevel: qrCodeLibrary.correction[selected.level]
       });
 
       qrCode.toCanvas(qrCodeCanvas, {

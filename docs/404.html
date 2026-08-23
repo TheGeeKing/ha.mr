@@ -14,13 +14,16 @@
     html, body {
       margin: 0;
       width: 100%;
-      height: 100%;
+      min-height: 100%;
     }
     body {
       display: flex;
-      justify-content: center;
+      justify-content: safe center;
       align-items: center;
+      box-sizing: border-box;
+      padding: 3.5rem 1rem 2rem;
       font-size: 120%;
+      overflow-y: auto;
     }
     * {
       font-family: "Hammersmith One", sans-serif;
@@ -99,6 +102,8 @@
       font-size: 0.75em;
     }
     #input-link {
+      box-sizing: border-box;
+      width: min(36rem, 92vw);
       padding: 5px 8px;
       border: 0;
       outline: 0;
@@ -133,6 +138,30 @@
     }
     #qr-correct-level-container {
       display: none;
+      width: min(16rem, 80vw);
+      margin-top: 0.25em;
+      text-align: center;
+    }
+    #qr-correct-level-container label {
+      display: block;
+    }
+    #qr-correct-level {
+      width: 100%;
+      margin: 0.4em 0 0;
+      accent-color: rgb(50, 100, 255);
+    }
+    #qr-correct-level-ticks {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 0.5em;
+      font-size: 0.85em;
+      user-select: none;
+    }
+    #qr-correct-level-hint {
+      display: block;
+      margin-top: 0.35em;
+      font-size: 0.75em;
+      opacity: 0.75;
     }
     #query-warning {
       display: none;
@@ -151,8 +180,12 @@
       color: #111111;
     }
     header {
-      position: absolute;
+      position: fixed;
       top: 20px;
+      left: 0;
+      right: 0;
+      z-index: 1;
+      text-align: center;
       pointer-events: none;
       opacity: 0;
       transition: opacity 1s;
@@ -208,9 +241,10 @@
     <canvas id="qrcode"></canvas>
 
     <span id="qr-correct-level-container">
-      <label for="qr-correct-level">Minimum QR code error correction threshold</label>
-      <br>
-      <input type="range" name="qr-correct-level" id="qr-correct-level" autocomplete="off" min="0" max="3" value="1">
+      <label for="qr-correct-level">Error correction</label>
+      <input type="range" name="qr-correct-level" id="qr-correct-level" autocomplete="off" min="0" max="0" value="0" step="1">
+      <div id="qr-correct-level-ticks" aria-hidden="true"></div>
+      <span id="qr-correct-level-hint">Each stop is a QR size, shown at its strongest correction.</span>
     </span>
 
     <span style="margin-top:20px">
