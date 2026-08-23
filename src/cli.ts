@@ -1,22 +1,28 @@
 import { outputAlphabetASCII, outputAlphabetEmoji, outputAlphabetQR } from "./alphabets.js";
 import { compress, decompress } from "./compress.js";
+import { rewriteUrl } from "./url-rewrites.js";
 
 export interface CliIO {
   writeOutput: (message: string) => void;
   writeError: (message: string) => void;
 }
 
+const LOSSLESS_FLAG = "--lossless";
+
 /**
  * Runs the hamr command with runtime-independent arguments and output.
  */
 export function runCli(args: string[], io: CliIO): number {
-  const input = args[0]?.trim();
-  const alphabetName = args[1]?.trim() || "ascii";
-  const command = args[2]?.trim() || "encode";
+  const lossless = args.includes(LOSSLESS_FLAG);
+  const positional = args.filter((argument) => argument !== LOSSLESS_FLAG);
+  const input = positional[0]?.trim();
+  const alphabetName = positional[1]?.trim() || "ascii";
+  const command = positional[2]?.trim() || "encode";
 
   if (!input) {
-    io.writeError("Usage: hamr <link> [ascii|qr|emoji] {decode|encode}");
+    io.writeError("Usage: hamr <link> [ascii|qr|emoji] {decode|encode} [--lossless]");
     io.writeError('The final argument is optional and defaults to "encode".');
+    io.writeError(`${LOSSLESS_FLAG} skips native website shortening.`);
     return 1;
   }
 
@@ -67,7 +73,8 @@ export function runCli(args: string[], io: CliIO): number {
     return 2;
   }
 
-  const compressed = compress(input, alphabet);
+  const toCompress = lossless ? input : rewriteUrl(input).url;
+  const compressed = compress(toCompress, alphabet);
   io.writeOutput(
     alphabetName === "qr" ? `HTTP://HA.MR/${compressed}` : `http://ha.mr#${compressed}`
   );

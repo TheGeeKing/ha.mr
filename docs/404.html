@@ -163,7 +163,8 @@
       font-size: 0.75em;
       opacity: 0.75;
     }
-    #query-warning {
+    #query-warning,
+    #rewrite-warning {
       display: none;
       font-size: 1rem;
       text-align: justify;
@@ -175,9 +176,13 @@
       border-radius: 10px;
       margin: 5px 0 15px 0;
     }
-    #query-warning summary {
+    #query-warning summary,
+    #rewrite-warning summary {
       cursor: pointer;
       color: #111111;
+    }
+    #rewrite-warning button {
+      margin: 8px 0 4px 0;
     }
     header {
       position: fixed;
@@ -231,6 +236,15 @@
       without breaking it. For example, an Amazon product link contains a lot
       of tracking information. Everything past the "?" symbol can be safely
       removed, making the link much shorter.
+    </details>
+    <details id="rewrite-warning">
+      <summary>Native website shortening used (lossy)...</summary>
+      <br>
+      This site supports a shorter equivalent of this link. The compressed
+      payload stores that shorter URL, so decompressing will not restore the
+      original (query parameters, path slug, and similar extra data are dropped).
+      <br>
+      <button type="button" id="keep-lossless">Keep lossless method</button>
     </details>
     <p id="output-link-container">
       <!-- biome-ignore lint/a11y/useValidAnchor: href is assigned by main.ts when a compressed link exists -->

@@ -8,6 +8,7 @@ import {
   correctionNotchesFromFits,
   pickCorrectionNotchIndex
 } from "./qr-correction-notches.js";
+import { rewriteUrl, type UrlRewriteResult } from "./url-rewrites.js";
 
 let domain = window.location.hostname;
 if (domain !== "ha.mr" && domain !== "www.ha.mr") {
@@ -61,6 +62,8 @@ const inputLinkElement = requiredElement<HTMLInputElement>("#input-link");
 const outputLinkElement = requiredElement<HTMLAnchorElement>("#output-link");
 const outputRatioElement = requiredElement<HTMLElement>("#output-ratio");
 const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
+const rewriteWarningElement = requiredElement<HTMLDetailsElement>("#rewrite-warning");
+const keepLosslessElement = requiredElement<HTMLButtonElement>("#keep-lossless");
 
 const qrCodeCanvas = requiredElement<HTMLCanvasElement>("#qrcode");
 const qrCodeCorrectionLevelContainer = requiredElement<HTMLElement>("#qr-correct-level-container");
@@ -80,6 +83,8 @@ qrCodeCorrectionLevelElement.addEventListener("input", () => {
 
 let qrCodeLibraryPromise: Promise<typeof import("lean-qr")> | undefined;
 let outputRevision = 0;
+let preferLossless = false;
+let losslessForInput = "";
 
 function qrVersionFromSize(size: number): number {
   return (size - 17) / 4;
@@ -147,9 +152,16 @@ function loadQrCodeLibrary(): Promise<typeof import("lean-qr")> {
 async function updateOutput(): Promise<void> {
   const revision = ++outputRevision;
   const input = inputLinkElement.value.trim();
+  if (input !== losslessForInput) {
+    preferLossless = false;
+  }
   try {
     const alphabet = settings.emoji ? outputAlphabetEmoji : outputAlphabetASCII;
-    const output = compress(input, alphabet);
+    const rewrite: UrlRewriteResult = preferLossless
+      ? { url: input, rewritten: false }
+      : rewriteUrl(input);
+    const toCompress = rewrite.url;
+    const output = compress(toCompress, alphabet);
     let inputNormalized = input;
     const inputLower = input.toLowerCase();
     if (inputLower.startsWith("https://")) {
@@ -164,10 +176,14 @@ async function updateOutput(): Promise<void> {
         excessiveParams = true;
       }
     }
-    if (excessiveParams) {
-      queryWarningElement.style.display = "inline";
-    } else {
+    if (rewrite.rewritten) {
+      rewriteWarningElement.style.display = "inline";
+      rewriteWarningElement.open = true;
       queryWarningElement.style.display = "none";
+    } else {
+      rewriteWarningElement.style.display = "none";
+      rewriteWarningElement.open = false;
+      queryWarningElement.style.display = excessiveParams ? "inline" : "none";
     }
     const ratio = (1 - (countSymbols(output, alphabet) + 6) / inputNormalized.length) * 100;
     if (ratio < -300) {
@@ -194,7 +210,7 @@ async function updateOutput(): Promise<void> {
       qrCodeCorrectionLevelContainer.style.display = "block";
 
       const qrCodeDomain = domain.toUpperCase();
-      const qrCodeLink = `HTTP://${qrCodeDomain}/${compress(input, outputAlphabetQR)}`;
+      const qrCodeLink = `HTTP://${qrCodeDomain}/${compress(toCompress, outputAlphabetQR)}`;
       const notches = correctionNotchesForPayload(qrCodeLibrary, qrCodeLink);
       if (notches.length === 0) {
         throw new Error("QR code does not fit");
@@ -237,6 +253,7 @@ async function updateOutput(): Promise<void> {
     outputRatioElement.style.color = "rgba(255, 255, 255, 0)";
     outputLinkElement.removeAttribute("href");
     queryWarningElement.style.display = "none";
+    rewriteWarningElement.style.display = "none";
   }
 }
 
@@ -250,6 +267,12 @@ function handleRedirectPrompt(target: string): void {
   redirectLinkElement.textContent = target;
   redirectLinkElement.href = target;
 }
+
+keepLosslessElement.addEventListener("click", () => {
+  preferLossless = true;
+  losslessForInput = inputLinkElement.value.trim();
+  updateOutput();
+});
 
 inputLinkElement.addEventListener("input", () => {
   updateOutput();
