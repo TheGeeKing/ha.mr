@@ -54,6 +54,33 @@ test("rewriteUrl shortens Amazon product URLs to /dp/{ASIN}", () => {
   });
 });
 
+test("rewriteUrl shortens Instagram URLs to instagr.am", () => {
+  assert.deepEqual(rewriteUrl("https://www.instagram.com/p/C8xYz1AbCdE/?igsh=TOKEN"), {
+    url: "https://instagr.am/p/C8xYz1AbCdE",
+    rewritten: true
+  });
+  assert.deepEqual(rewriteUrl("https://www.instagram.com/reel/DAbCdEfGhIj/"), {
+    url: "https://instagr.am/reel/DAbCdEfGhIj",
+    rewritten: true
+  });
+  assert.deepEqual(rewriteUrl("instagram.com/natgeo"), {
+    url: "https://instagr.am/natgeo",
+    rewritten: true
+  });
+  assert.deepEqual(rewriteUrl("https://instagr.am/p/C8xYz1AbCdE"), {
+    url: "https://instagr.am/p/C8xYz1AbCdE",
+    rewritten: false
+  });
+  assert.deepEqual(rewriteUrl("https://www.instagram.com/direct/t/178412345"), {
+    url: "https://www.instagram.com/direct/t/178412345",
+    rewritten: false
+  });
+  assert.deepEqual(rewriteUrl("https://ig.me/m/natgeo"), {
+    url: "https://ig.me/m/natgeo",
+    rewritten: false
+  });
+});
+
 test("rewriteUrl applies a caller-supplied pattern and equivalent", () => {
   const rules = [
     {

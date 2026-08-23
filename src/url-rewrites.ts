@@ -23,6 +23,11 @@ export const urlRewriteRules: UrlRewriteRule[] = [
     pattern:
       /^(?:https?:\/\/)?(?:www\.|smile\.)?amazon\.[^/?#]+\/(?:[^/?#]+\/)*dp\/([A-Z0-9]{10})(?:[/?#].*)?$/i,
     equivalent: "http://amazon.com/dp/$1"
+  },
+  {
+    pattern:
+      /^(?:https?:\/\/)?(?:www\.|m\.)?instagram\.com\/(?!direct(?:\/|$))([^?#]+?)\/?(?:[?#].*)?$/i,
+    equivalent: "https://instagr.am/$1"
   }
 ];
 
