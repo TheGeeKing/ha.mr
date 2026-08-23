@@ -84,30 +84,27 @@ for (const runtime of runtimes) {
     assert.equal(execute(["http://ha.mr#♐📯"]), "https://www.example.com");
   });
 
-  test(`${runtime.name} CLI rewrites YouTube watch URLs before compressing`, () => {
+  test(`${runtime.name} CLI preserves YouTube watch URLs by default`, () => {
     const compressed = execute(["https://www.youtube.com/watch?v=TOr1Vvji6jA"]);
 
     assert.match(compressed, /^http:\/\/ha\.mr#./);
-    assert.equal(execute([compressed]), "https://youtu.be/TOr1Vvji6jA");
+    assert.equal(execute([compressed]), "https://www.youtube.com/watch?v=TOr1Vvji6jA");
   });
 
-  test(`${runtime.name} CLI rewrites Amazon product URLs before compressing`, () => {
-    const compressed = execute([
-      "https://smile.amazon.com/TOPJIN-Lovely-Stuffed-Vegetable-Carrot/dp/B077ZTBWV2/ref=sr_1_6?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6"
-    ]);
+  test(`${runtime.name} CLI preserves Amazon product URLs by default`, () => {
+    const input =
+      "https://smile.amazon.com/TOPJIN-Lovely-Stuffed-Vegetable-Carrot/dp/B077ZTBWV2/ref=sr_1_6?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6";
+    const compressed = execute([input]);
 
-    assert.equal(
-      execute([compressed]),
-      "http://amazon.com/dp/B077ZTBWV2?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6"
-    );
+    assert.equal(execute([compressed]), input);
   });
 
-  test(`${runtime.name} CLI --lossless skips native website shortening`, () => {
+  test(`${runtime.name} CLI --lossy enables native website shortening`, () => {
     const input = "https://www.youtube.com/watch?v=TOr1Vvji6jA";
-    const compressed = execute([input, "--lossless"]);
+    const compressed = execute([input, "--lossy"]);
 
     assert.match(compressed, /^http:\/\/ha\.mr#./);
-    assert.equal(execute([compressed]), input);
+    assert.equal(execute([compressed]), "https://youtu.be/TOr1Vvji6jA");
   });
 
   test(`${runtime.name} CLI reports usage when input is missing`, () => {
@@ -115,7 +112,7 @@ for (const runtime of runtimes) {
 
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Usage: hamr/);
-    assert.match(result.stderr, /--lossless/);
+    assert.match(result.stderr, /--lossy/);
   });
 
   test(`${runtime.name} CLI rejects unknown alphabets`, () => {
