@@ -63,6 +63,7 @@ const outputLinkElement = requiredElement<HTMLAnchorElement>("#output-link");
 const outputRatioElement = requiredElement<HTMLElement>("#output-ratio");
 const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
 const rewriteWarningElement = requiredElement<HTMLDetailsElement>("#rewrite-warning");
+const rewriteToElement = requiredElement<HTMLElement>("#rewrite-to");
 const keepLosslessElement = requiredElement<HTMLButtonElement>("#keep-lossless");
 
 const qrCodeCanvas = requiredElement<HTMLCanvasElement>("#qrcode");
@@ -177,7 +178,8 @@ async function updateOutput(): Promise<void> {
       }
     }
     if (rewrite.rewritten) {
-      rewriteWarningElement.style.display = "inline";
+      rewriteToElement.innerHTML = `<a href="${rewrite.url}" target="_blank" rel="noopener">${rewrite.url}</a>`;
+      rewriteWarningElement.style.display = "block";
       rewriteWarningElement.open = true;
       queryWarningElement.style.display = "none";
     } else {

@@ -96,7 +96,10 @@ for (const runtime of runtimes) {
       "https://smile.amazon.com/TOPJIN-Lovely-Stuffed-Vegetable-Carrot/dp/B077ZTBWV2/ref=sr_1_6?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6"
     ]);
 
-    assert.equal(execute([compressed]), "http://amazon.com/dp/B077ZTBWV2");
+    assert.equal(
+      execute([compressed]),
+      "http://amazon.com/dp/B077ZTBWV2?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6"
+    );
   });
 
   test(`${runtime.name} CLI --lossless skips native website shortening`, () => {

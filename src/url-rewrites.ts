@@ -119,6 +119,49 @@ function applyEquivalent(equivalent: UrlRewriteEquivalent, match: RegExpMatchArr
   return equivalent.replaceAll(/\$(\d+)/g, (_whole, index: string) => match[Number(index)] ?? "");
 }
 
+function parseAbsoluteUrl(value: string): URL | undefined {
+  try {
+    return new URL(value);
+  } catch {
+    try {
+      return new URL(`http://${value}`);
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+/**
+ * Copies query parameters and hash from the original URL onto the equivalent.
+ * Parameters whose values were already used as rewrite captures (for example YouTube `v`)
+ * are left off so they are not duplicated in the path and the query.
+ */
+function attachUnconsumedQueryAndHash(
+  sourceHref: string,
+  rewritten: string,
+  captures: readonly (string | undefined)[]
+): string {
+  const source = parseAbsoluteUrl(sourceHref);
+  const dest = parseAbsoluteUrl(rewritten);
+  if (!source || !dest) return rewritten;
+
+  const consumedValues = new Set(captures.filter((value): value is string => Boolean(value)));
+  let attached = false;
+
+  for (const [key, value] of source.searchParams) {
+    if (dest.searchParams.has(key) || consumedValues.has(value)) continue;
+    dest.searchParams.append(key, value);
+    attached = true;
+  }
+
+  if (source.hash && !dest.hash) {
+    dest.hash = source.hash;
+    attached = true;
+  }
+
+  return attached ? dest.toString() : rewritten;
+}
+
 /**
  * Returns a shorter equivalent URL when a rewrite rule matches.
  * Unmatched input is returned unchanged. Pass `rules` to add or override the table.
@@ -136,7 +179,11 @@ export function rewriteUrl(
     for (const rule of rules) {
       const match = candidate.match(rule.pattern);
       if (!match) continue;
-      const url = applyEquivalent(rule.equivalent, match);
+      const url = attachUnconsumedQueryAndHash(
+        candidate,
+        applyEquivalent(rule.equivalent, match),
+        match.slice(1)
+      );
       if (url === input) continue;
       return { url, rewritten: true };
     }
