@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.1.2...ha.mr-v1.2.0) (2026-08-23)
+
+
+### Features
+
+* **qr:** show one error-correction notch per QR size ([#18](https://github.com/TheGeeKing/ha.mr/issues/18)) ([cdd8daf](https://github.com/TheGeeKing/ha.mr/commit/cdd8daf77a6629c2a17d840151bd118c9b49cffb))
+* rewrite matching URLs to native platform before compression ([#17](https://github.com/TheGeeKing/ha.mr/issues/17)) ([30e5b66](https://github.com/TheGeeKing/ha.mr/commit/30e5b66231fb12b9412ac9fd73c1243ce97820eb))
+
+
+### Bug Fixes
+
+* **layout:** restore vertical content centering ([39b8976](https://github.com/TheGeeKing/ha.mr/commit/39b8976ce862a5a54a1d9f73a152f2b3fc5fa4fa))
+
 ## [1.1.2](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.1.1...ha.mr-v1.1.2) (2026-08-21)
 
 
