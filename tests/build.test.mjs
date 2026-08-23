@@ -32,6 +32,8 @@ test("build contains every deployable artifact referenced by HTML", () => {
   assert.match(html, /id="rewrite-to"/);
   assert.match(html, /Transformed as/);
   assert.match(html, /Keep lossless method/);
+  assert.match(html, /body\{[^}]*min-height:100vh/);
+  assert.match(html, /padding:3.5rem 1rem/);
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
   assert.match(main, /\.src="lean-qr\.js"/);
