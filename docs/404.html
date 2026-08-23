@@ -163,21 +163,36 @@
       font-size: 0.75em;
       opacity: 0.75;
     }
-    #query-warning {
+    #query-warning,
+    #rewrite-warning {
       display: none;
       font-size: 1rem;
       text-align: justify;
       text-align-last: center;
       max-width: 80vmin;
+      color-scheme: light;
       background-color: gold;
       color: #111111;
       padding: 5px 10px;
       border-radius: 10px;
       margin: 5px 0 15px 0;
     }
-    #query-warning summary {
+    #query-warning summary,
+    #rewrite-warning summary {
       cursor: pointer;
       color: #111111;
+    }
+    #rewrite-transform {
+      margin: 10px 0;
+      text-align: center;
+      text-align-last: auto;
+      word-break: break-all;
+      font-size: 0.9em;
+    }
+    #rewrite-warning button {
+      margin: 8px 0 4px 0;
+      color: #ffffff;
+      background-color: #111111;
     }
     header {
       position: fixed;
@@ -231,6 +246,17 @@
       without breaking it. For example, an Amazon product link contains a lot
       of tracking information. Everything past the "?" symbol can be safely
       removed, making the link much shorter.
+    </details>
+    <details id="rewrite-warning">
+      <summary>Native website shortening used (lossy)...</summary>
+      <p id="rewrite-transform">Transformed as <span id="rewrite-to"></span></p>
+      This site supports a shorter equivalent of this link. The compressed
+      payload stores that shorter URL, so decompressing will not restore the
+      original. Unconsumed query parameters, including service-specific values
+      such as YouTube feature or list, may be preserved. What is lost is path
+      and service-specific data that the rewritten native URL may omit.
+      <br>
+      <button type="button" id="keep-lossless">Keep lossless method</button>
     </details>
     <p id="output-link-container">
       <!-- biome-ignore lint/a11y/useValidAnchor: href is assigned by main.ts when a compressed link exists -->

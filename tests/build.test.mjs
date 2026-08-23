@@ -14,7 +14,8 @@ test("build contains every deployable artifact referenced by HTML", () => {
     "compression-dictionaries.js",
     "lean-qr.js",
     "main.js",
-    "node.js"
+    "node.js",
+    "url-rewrites.js"
   ];
 
   for (const file of expectedFiles) {
@@ -27,9 +28,14 @@ test("build contains every deployable artifact referenced by HTML", () => {
   assert.match(html, /id="qr-correct-level-ticks"/);
   assert.match(html, /Each stop is a QR size/);
   assert.doesNotMatch(html, /Minimum QR code error correction threshold/);
+  assert.match(html, /id="rewrite-warning"/);
+  assert.match(html, /id="rewrite-to"/);
+  assert.match(html, /Transformed as/);
+  assert.match(html, /Keep lossless method/);
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
   assert.match(main, /\.src="lean-qr\.js"/);
+  assert.doesNotMatch(main, /innerHTML/);
 });
 
 test("compression browser modules stay below the transfer-size budget", () => {
