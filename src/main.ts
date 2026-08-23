@@ -178,7 +178,12 @@ async function updateOutput(): Promise<void> {
       }
     }
     if (rewrite.rewritten) {
-      rewriteToElement.innerHTML = `<a href="${rewrite.url}" target="_blank" rel="noopener">${rewrite.url}</a>`;
+      const rewriteLink = document.createElement("a");
+      rewriteLink.href = rewrite.url;
+      rewriteLink.textContent = rewrite.url;
+      rewriteLink.target = "_blank";
+      rewriteLink.rel = "noopener";
+      rewriteToElement.replaceChildren(rewriteLink);
       rewriteWarningElement.style.display = "block";
       rewriteWarningElement.open = true;
       queryWarningElement.style.display = "none";

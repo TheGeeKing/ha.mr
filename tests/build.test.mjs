@@ -35,6 +35,7 @@ test("build contains every deployable artifact referenced by HTML", () => {
 
   const main = readFileSync(join(root, "dist", "main.js"), "utf8");
   assert.match(main, /\.src="lean-qr\.js"/);
+  assert.doesNotMatch(main, /innerHTML/);
 });
 
 test("compression browser modules stay below the transfer-size budget", () => {
