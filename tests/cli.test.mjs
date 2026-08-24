@@ -107,6 +107,13 @@ for (const runtime of runtimes) {
     assert.equal(execute([compressed]), "https://youtu.be/TOr1Vvji6jA");
   });
 
+  test(`${runtime.name} CLI --lossy removes nonfunctional query parameters`, () => {
+    const input = "https://www.amazon.com/dp/B077ZTBWV2?keywords=carrot&qid=1563782964&th=1";
+    const compressed = execute([input, "--lossy"]);
+
+    assert.equal(execute([compressed]), "http://amazon.com/dp/B077ZTBWV2?th=1");
+  });
+
   test(`${runtime.name} CLI reports usage when input is missing`, () => {
     const result = spawnSync(runtime.command, runtime.prefixArguments, { encoding: "utf8" });
 

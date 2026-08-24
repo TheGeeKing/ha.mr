@@ -30,7 +30,10 @@ test("build contains every deployable artifact referenced by HTML", () => {
   assert.doesNotMatch(html, /Minimum QR code error correction threshold/);
   assert.match(html, /id="rewrite-warning"/);
   assert.match(html, /id="rewrite-to"/);
+  assert.match(html, /id="dropped-query-params"/);
+  assert.match(html, /id="dropped-query-params-list"/);
   assert.match(html, /Transformed as/);
+  assert.match(html, /Restore a removed parameter/);
   assert.match(html, /Keep lossless method/);
   assert.match(html, /body\{[^}]*min-height:100vh/);
   assert.match(html, /padding:3.5rem 1rem/);

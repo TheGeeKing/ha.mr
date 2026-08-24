@@ -64,6 +64,8 @@ const outputRatioElement = requiredElement<HTMLElement>("#output-ratio");
 const queryWarningElement = requiredElement<HTMLElement>("#query-warning");
 const rewriteWarningElement = requiredElement<HTMLDetailsElement>("#rewrite-warning");
 const rewriteToElement = requiredElement<HTMLElement>("#rewrite-to");
+const droppedQueryParamsElement = requiredElement<HTMLElement>("#dropped-query-params");
+const droppedQueryParamsListElement = requiredElement<HTMLElement>("#dropped-query-params-list");
 const keepLosslessElement = requiredElement<HTMLButtonElement>("#keep-lossless");
 
 const qrCodeCanvas = requiredElement<HTMLCanvasElement>("#qrcode");
@@ -86,6 +88,8 @@ let qrCodeLibraryPromise: Promise<typeof import("lean-qr")> | undefined;
 let outputRevision = 0;
 let preferLossless = false;
 let losslessForInput = "";
+let querySelectionForInput = "";
+const selectedDroppedQueryParamIndexes = new Set<number>();
 
 function qrVersionFromSize(size: number): number {
   return (size - 17) / 4;
@@ -150,18 +154,63 @@ function loadQrCodeLibrary(): Promise<typeof import("lean-qr")> {
   return qrCodeLibraryPromise;
 }
 
+function restoreSelectedQueryParams(rewrite: UrlRewriteResult): string {
+  if (selectedDroppedQueryParamIndexes.size === 0) return rewrite.url;
+
+  const restored = new URL(rewrite.url);
+  for (const [index, parameter] of rewrite.droppedQueryParams.entries()) {
+    if (selectedDroppedQueryParamIndexes.has(index)) {
+      restored.searchParams.append(parameter.key, parameter.value);
+    }
+  }
+  return restored.toString();
+}
+
+function syncDroppedQueryParamControls(rewrite: UrlRewriteResult): void {
+  const hasDroppedQueryParams = rewrite.droppedQueryParams.length > 0;
+  droppedQueryParamsElement.style.display = hasDroppedQueryParams ? "block" : "none";
+  if (!hasDroppedQueryParams) {
+    droppedQueryParamsListElement.replaceChildren();
+    return;
+  }
+
+  droppedQueryParamsListElement.replaceChildren(
+    ...rewrite.droppedQueryParams.map((parameter, index) => {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = selectedDroppedQueryParamIndexes.has(index);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedDroppedQueryParamIndexes.add(index);
+        } else {
+          selectedDroppedQueryParamIndexes.delete(index);
+        }
+        updateOutput();
+      });
+      const value = document.createElement("code");
+      value.textContent = `${parameter.key}=${parameter.value}`;
+      label.append(checkbox, value);
+      return label;
+    })
+  );
+}
+
 async function updateOutput(): Promise<void> {
   const revision = ++outputRevision;
   const input = inputLinkElement.value.trim();
   if (input !== losslessForInput) {
     preferLossless = false;
   }
+  if (input !== querySelectionForInput) {
+    selectedDroppedQueryParamIndexes.clear();
+    querySelectionForInput = input;
+  }
   try {
     const alphabet = settings.emoji ? outputAlphabetEmoji : outputAlphabetASCII;
-    const rewrite: UrlRewriteResult = preferLossless
-      ? { url: input, rewritten: false }
-      : rewriteUrl(input);
-    const toCompress = rewrite.url;
+    const rewrite = rewriteUrl(input);
+    const isRewriteUsed = rewrite.rewritten && !preferLossless;
+    const toCompress = isRewriteUsed ? restoreSelectedQueryParams(rewrite) : input;
     const output = compress(toCompress, alphabet);
     let inputNormalized = input;
     const inputLower = input.toLowerCase();
@@ -177,17 +226,19 @@ async function updateOutput(): Promise<void> {
         excessiveParams = true;
       }
     }
-    if (rewrite.rewritten) {
+    if (isRewriteUsed) {
       const rewriteLink = document.createElement("a");
-      rewriteLink.href = rewrite.url;
-      rewriteLink.textContent = rewrite.url;
+      rewriteLink.href = toCompress;
+      rewriteLink.textContent = toCompress;
       rewriteLink.target = "_blank";
       rewriteLink.rel = "noopener";
       rewriteToElement.replaceChildren(rewriteLink);
+      syncDroppedQueryParamControls(rewrite);
       rewriteWarningElement.style.display = "block";
       rewriteWarningElement.open = true;
       queryWarningElement.style.display = "none";
     } else {
+      droppedQueryParamsElement.style.display = "none";
       rewriteWarningElement.style.display = "none";
       rewriteWarningElement.open = false;
       queryWarningElement.style.display = excessiveParams ? "inline" : "none";
@@ -260,6 +311,7 @@ async function updateOutput(): Promise<void> {
     outputRatioElement.style.color = "rgba(255, 255, 255, 0)";
     outputLinkElement.removeAttribute("href");
     queryWarningElement.style.display = "none";
+    droppedQueryParamsElement.style.display = "none";
     rewriteWarningElement.style.display = "none";
   }
 }

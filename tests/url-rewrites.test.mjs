@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { rewriteUrl, urlRewriteRules } from "../dist/url-rewrites.js";
+import { rewriteUrl as rewriteUrlWithDetails, urlRewriteRules } from "../dist/url-rewrites.js";
+
+function rewriteUrl(...arguments_) {
+  const { droppedQueryParams: _droppedQueryParams, ...result } = rewriteUrlWithDetails(
+    ...arguments_
+  );
+  return result;
+}
 
 test("rewriteUrl leaves unmatched URLs unchanged", () => {
   assert.deepEqual(rewriteUrl("https://www.example.com/path?x=1"), {
@@ -14,6 +21,71 @@ test("rewriteUrl leaves unmatched URLs unchanged", () => {
   });
 });
 
+test("rewriteUrl preserves functional parameters and reports removed parameters", () => {
+  assert.deepEqual(
+    rewriteUrlWithDetails(
+      "https://www.youtube.com/watch?v=TOr1Vvji6jA&utm_source=share&t=10&t=20#details"
+    ),
+    {
+      url: "https://youtu.be/TOr1Vvji6jA?t=10&t=20#details",
+      rewritten: true,
+      droppedQueryParams: [{ key: "utm_source", value: "share" }]
+    }
+  );
+});
+
+test("rewriteUrl preserves duplicate removed parameters for optional restoration", () => {
+  assert.deepEqual(
+    rewriteUrlWithDetails("https://www.amazon.com/dp/B077ZTBWV2?tag=first&th=1&tag=second#reviews"),
+    {
+      url: "http://amazon.com/dp/B077ZTBWV2?th=1#reviews",
+      rewritten: true,
+      droppedQueryParams: [
+        { key: "tag", value: "first" },
+        { key: "tag", value: "second" }
+      ]
+    }
+  );
+});
+
+test("rewriteUrl keeps verified functional parameters for each supported platform", () => {
+  const cases = [
+    [
+      "https://www.instagram.com/p/C8xYz1AbCdE/?img_index=2",
+      "https://instagr.am/p/C8xYz1AbCdE?img_index=2"
+    ],
+    [
+      "https://www.reddit.com/r/funny/comments/7n5lu/man_can_fly/?sort=new",
+      "https://redd.it/7n5lu?sort=new"
+    ],
+    ["https://telegram.me/example_bot?start=payload", "https://t.me/example_bot?start=payload"],
+    [
+      "https://www.ebay.com/itm/Cool-Gadget/123456789012?var=987654321",
+      "https://www.ebay.com/itm/123456789012?var=987654321"
+    ],
+    [
+      "https://www.etsy.com/listing/123456789/cool-print?variation0=456",
+      "https://www.etsy.com/listing/123456789?variation0=456"
+    ],
+    [
+      "https://store.steampowered.com/app/730/Counter-Strike_2/?l=french&cc=fr",
+      "https://store.steampowered.com/app/730?l=french&cc=fr"
+    ],
+    [
+      "https://apps.apple.com/us/app/example/id310633997?ppid=custom-page",
+      "https://apps.apple.com/app/id310633997?ppid=custom-page"
+    ]
+  ];
+
+  for (const [input, expected] of cases) {
+    assert.deepEqual(rewriteUrlWithDetails(input), {
+      url: expected,
+      rewritten: true,
+      droppedQueryParams: []
+    });
+  }
+});
+
 test("rewriteUrl shortens YouTube watch URLs to youtu.be", () => {
   assert.deepEqual(rewriteUrl("https://www.youtube.com/watch?v=TOr1Vvji6jA"), {
     url: "https://youtu.be/TOr1Vvji6jA",
@@ -22,7 +94,7 @@ test("rewriteUrl shortens YouTube watch URLs to youtu.be", () => {
   assert.deepEqual(
     rewriteUrl("https://m.youtube.com/watch?feature=share&v=TOr1Vvji6jA&list=PLxx"),
     {
-      url: "https://youtu.be/TOr1Vvji6jA?feature=share&list=PLxx",
+      url: "https://youtu.be/TOr1Vvji6jA?list=PLxx",
       rewritten: true
     }
   );
@@ -53,7 +125,7 @@ test("rewriteUrl shortens Amazon product URLs to /dp/{ASIN}", () => {
     "https://smile.amazon.com/TOPJIN-Lovely-Stuffed-Vegetable-Carrot/dp/B077ZTBWV2/ref=sr_1_6?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6";
 
   assert.deepEqual(rewriteUrl(longAmazon), {
-    url: "http://amazon.com/dp/B077ZTBWV2?keywords=carrot+plush&qid=1563782964&s=gateway&sr=8-6",
+    url: "http://amazon.com/dp/B077ZTBWV2",
     rewritten: true
   });
   assert.deepEqual(rewriteUrl("https://www.amazon.co.uk/dp/B077ZTBWV2"), {
@@ -68,7 +140,7 @@ test("rewriteUrl shortens Amazon product URLs to /dp/{ASIN}", () => {
 
 test("rewriteUrl shortens Instagram URLs to instagr.am", () => {
   assert.deepEqual(rewriteUrl("https://www.instagram.com/p/C8xYz1AbCdE/?igsh=TOKEN"), {
-    url: "https://instagr.am/p/C8xYz1AbCdE?igsh=TOKEN",
+    url: "https://instagr.am/p/C8xYz1AbCdE",
     rewritten: true
   });
   assert.deepEqual(rewriteUrl("https://www.instagram.com/reel/DAbCdEfGhIj/"), {
@@ -97,7 +169,7 @@ test("rewriteUrl shortens Reddit posts to redd.it", () => {
   assert.deepEqual(
     rewriteUrl("https://www.reddit.com/r/funny/comments/7n5lu/man_can_fly/?utm_source=share"),
     {
-      url: "https://redd.it/7n5lu?utm_source=share",
+      url: "https://redd.it/7n5lu",
       rewritten: true
     }
   );
@@ -131,7 +203,7 @@ test("rewriteUrl shortens Telegram telegram.me to t.me", () => {
 
 test("rewriteUrl shortens Facebook pages to fb.me", () => {
   assert.deepEqual(rewriteUrl("https://www.facebook.com/zuck?fbclid=IwAR"), {
-    url: "https://fb.me/zuck?fbclid=IwAR",
+    url: "https://fb.me/zuck",
     rewritten: true
   });
   assert.deepEqual(rewriteUrl("https://www.facebook.com/watch/?v=123"), {
@@ -170,14 +242,14 @@ test("rewriteUrl shortens Stack Overflow question URLs", () => {
 
 test("rewriteUrl shortens IMDb title URLs", () => {
   assert.deepEqual(rewriteUrl("https://www.imdb.com/title/tt0111161/?ref_=nv_sr"), {
-    url: "https://www.imdb.com/title/tt0111161?ref_=nv_sr",
+    url: "https://www.imdb.com/title/tt0111161",
     rewritten: true
   });
 });
 
 test("rewriteUrl shortens eBay item URLs", () => {
   assert.deepEqual(rewriteUrl("https://www.ebay.com/itm/Cool-Gadget/123456789012?hash=item"), {
-    url: "https://www.ebay.com/itm/123456789012?hash=item",
+    url: "https://www.ebay.com/itm/123456789012",
     rewritten: true
   });
   assert.deepEqual(rewriteUrl("https://www.ebay.co.uk/itm/123456789012"), {
@@ -188,7 +260,7 @@ test("rewriteUrl shortens eBay item URLs", () => {
 
 test("rewriteUrl shortens Etsy listing URLs", () => {
   assert.deepEqual(rewriteUrl("https://www.etsy.com/listing/123456789/cool-print?ref=hp"), {
-    url: "https://www.etsy.com/listing/123456789?ref=hp",
+    url: "https://www.etsy.com/listing/123456789",
     rewritten: true
   });
 });
@@ -211,7 +283,7 @@ test("rewriteUrl shortens App Store URLs to /app/id", () => {
   assert.deepEqual(
     rewriteUrl("https://apps.apple.com/us/app/whatsapp-messenger/id310633997?mt=8"),
     {
-      url: "https://apps.apple.com/app/id310633997?mt=8",
+      url: "https://apps.apple.com/app/id310633997",
       rewritten: true
     }
   );
@@ -226,10 +298,29 @@ test("rewriteUrl applies a caller-supplied pattern and equivalent", () => {
   ];
 
   assert.deepEqual(rewriteUrl("https://news.example/p/abc99?utm=1", rules), {
-    url: "https://n.example/abc99?utm=1",
+    url: "https://n.example/abc99",
     rewritten: true
   });
   assert.equal(urlRewriteRules.length > 0, true);
+});
+
+test("rewriteUrl applies a caller-supplied query allowlist", () => {
+  const rules = [
+    {
+      pattern: /^https:\/\/news\.example\/p\/([a-z0-9]+)/,
+      equivalent: "https://n.example/$1",
+      preserveQueryParams: ["view"]
+    }
+  ];
+
+  assert.deepEqual(
+    rewriteUrlWithDetails("https://news.example/p/abc99?view=compact&utm=1", rules),
+    {
+      url: "https://n.example/abc99?view=compact",
+      rewritten: true,
+      droppedQueryParams: [{ key: "utm", value: "1" }]
+    }
+  );
 });
 
 test("rewriteUrl applies a caller-supplied equivalent builder", () => {

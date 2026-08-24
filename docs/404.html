@@ -189,6 +189,29 @@
       word-break: break-all;
       font-size: 0.9em;
     }
+    #dropped-query-params {
+      display: none;
+      margin: 10px 0;
+      padding: 0;
+      min-width: 0;
+      border: 0;
+      text-align: left;
+      text-align-last: auto;
+    }
+    #dropped-query-params legend {
+      margin-bottom: 5px;
+    }
+    #dropped-query-params-list {
+      display: grid;
+      gap: 4px;
+      overflow-wrap: anywhere;
+    }
+    #dropped-query-params-list label {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      cursor: pointer;
+    }
     #rewrite-warning button {
       margin: 8px 0 4px 0;
       color: #ffffff;
@@ -251,10 +274,13 @@
       <summary>Native website shortening used (lossy)...</summary>
       <p id="rewrite-transform">Transformed as <span id="rewrite-to"></span></p>
       This site supports a shorter equivalent of this link. The compressed
-      payload stores that shorter URL, so decompressing will not restore the
-      original. Unconsumed query parameters, including service-specific values
-      such as YouTube feature or list, may be preserved. What is lost is path
-      and service-specific data that the rewritten native URL may omit.
+      payload stores that shorter URL, so verify the transformed link before
+      sharing it. Parameters known to change the destination are kept; other
+      parameters are removed by default.
+      <fieldset id="dropped-query-params">
+        <legend>Restore a removed parameter:</legend>
+        <div id="dropped-query-params-list"></div>
+      </fieldset>
       <br>
       <button type="button" id="keep-lossless">Keep lossless method</button>
     </details>

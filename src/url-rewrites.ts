@@ -9,42 +9,94 @@ export type UrlRewriteEquivalent = string | ((...captures: string[]) => string);
 export type UrlRewriteRule = {
   pattern: RegExp;
   equivalent: UrlRewriteEquivalent;
+  preserveQueryParams?: readonly string[];
+};
+
+export type UrlQueryParameter = {
+  key: string;
+  value: string;
 };
 
 export type UrlRewriteResult = {
   url: string;
   rewritten: boolean;
+  droppedQueryParams: UrlQueryParameter[];
 };
 
 export const urlRewriteRules: UrlRewriteRule[] = [
   {
     pattern:
       /^(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?(?:[^#]*?&)?v=([\w-]{11})(?:[&#].*)?$/i,
-    equivalent: "https://youtu.be/$1"
+    equivalent: "https://youtu.be/$1",
+    preserveQueryParams: ["t", "start", "list", "index"]
   },
   {
     pattern:
       /^(?:https?:\/\/)?(?:www\.|smile\.)?amazon\.[^/?#]+\/(?:[^/?#]+\/)*dp\/([A-Z0-9]{10})(?:[/?#].*)?$/i,
-    equivalent: "http://amazon.com/dp/$1"
+    equivalent: "http://amazon.com/dp/$1",
+    preserveQueryParams: ["th", "psc", "language", "smid"]
   },
   {
     pattern:
       /^(?:https?:\/\/)?(?:www\.|m\.)?instagram\.com\/(?!direct(?:\/|$))([^?#]+?)\/?(?:[?#].*)?$/i,
-    equivalent: "https://instagr.am/$1"
+    equivalent: "https://instagr.am/$1",
+    preserveQueryParams: ["hl", "img_index"]
   },
   {
     pattern:
       /^(?:https?:\/\/)?(?:www\.|old\.|np\.|new\.|m\.)?reddit\.com\/(?:r\/[^/]+\/)?comments\/([a-z0-9]+)(?:[/?#].*)?$/i,
-    equivalent: "https://redd.it/$1"
+    equivalent: "https://redd.it/$1",
+    preserveQueryParams: ["sort", "context", "depth", "limit", "showedits", "showmore", "sr_detail"]
   },
   {
     pattern:
       /^(?:https?:\/\/)?(?:api\.|web\.)?whatsapp\.com\/send\?(?:[^#]*?&)?phone=(?:\+|%2B)?(\d+)(?:[&#].*)?$/i,
-    equivalent: "https://wa.me/$1"
+    equivalent: "https://wa.me/$1",
+    preserveQueryParams: ["text"]
   },
   {
     pattern: /^(?:https?:\/\/)?(?:www\.)?telegram\.me\/([^?#]+?)\/?(?:[?#].*)?$/i,
-    equivalent: "https://t.me/$1"
+    equivalent: "https://t.me/$1",
+    preserveQueryParams: [
+      "text",
+      "profile",
+      "direct",
+      "single",
+      "thread",
+      "comment",
+      "t",
+      "task",
+      "option",
+      "url",
+      "videochat",
+      "livestream",
+      "voicechat",
+      "album",
+      "boost",
+      "collection",
+      "start",
+      "startgroup",
+      "startchannel",
+      "admin",
+      "game",
+      "startapp",
+      "mode",
+      "startattach",
+      "attach",
+      "choose",
+      "name",
+      "c",
+      "server",
+      "port",
+      "secret",
+      "user",
+      "pass",
+      "rotation",
+      "intensity",
+      "bg_color",
+      "phone",
+      "hash"
+    ]
   },
   {
     pattern:
@@ -53,7 +105,8 @@ export const urlRewriteRules: UrlRewriteRule[] = [
   },
   {
     pattern: /^(?:https?:\/\/)?(?:www\.)?dailymotion\.com\/video\/([a-z0-9]+)(?:[/_?#].*)?$/i,
-    equivalent: "https://dai.ly/$1"
+    equivalent: "https://dai.ly/$1",
+    preserveQueryParams: ["playlist"]
   },
   {
     pattern:
@@ -71,15 +124,18 @@ export const urlRewriteRules: UrlRewriteRule[] = [
   {
     pattern:
       /^(?:https?:\/\/)?((?:www\.)?ebay\.[^/?#]+)\/itm\/(?:[^/]+\/)?(\d{8,13})(?:[/?#].*)?$/i,
-    equivalent: "https://$1/itm/$2"
+    equivalent: "https://$1/itm/$2",
+    preserveQueryParams: ["var"]
   },
   {
     pattern: /^(?:https?:\/\/)?(?:www\.)?etsy\.com(?:\/[a-z]{2})?\/listing\/(\d+)(?:[/?#].*)?$/i,
-    equivalent: "https://www.etsy.com/listing/$1"
+    equivalent: "https://www.etsy.com/listing/$1",
+    preserveQueryParams: ["variation0", "variation1", "variation2", "coupon"]
   },
   {
     pattern: /^(?:https?:\/\/)?store\.steampowered\.com\/app\/(\d+)(?:\/[^/?#]*)?(?:[/?#].*)?$/i,
-    equivalent: "https://store.steampowered.com/app/$1"
+    equivalent: "https://store.steampowered.com/app/$1",
+    preserveQueryParams: ["l", "cc", "curator_clanid"]
   },
   {
     pattern: /^(?:https?:\/\/)?(?:www\.)?goodreads\.com\/book\/show\/(\d+)(?:[/?#.-].*)?$/i,
@@ -88,11 +144,12 @@ export const urlRewriteRules: UrlRewriteRule[] = [
   {
     pattern:
       /^(?:https?:\/\/)?(?:apps|itunes)\.apple\.com\/(?:[a-z]{2}(?:-[a-z]+)?\/)?app(?:\/[^/]+)?\/id(\d+)(?:[/?#].*)?$/i,
-    equivalent: "https://apps.apple.com/app/id$1"
+    equivalent: "https://apps.apple.com/app/id$1",
+    preserveQueryParams: ["ppid", "l", "app", "platform", "see-all"]
   },
   {
     pattern: /^(?:https?:\/\/)?(?:www\.|m\.)?flickr\.com\/photos\/[^/]+\/(\d+)(?:[/?#].*)?$/i,
-    equivalent: (photoId) => "https://flic.kr/p/" + encode58(photoId)
+    equivalent: (photoId) => `https://flic.kr/p/${encode58(photoId)}`
   }
 ];
 
@@ -132,26 +189,35 @@ function parseAbsoluteUrl(value: string): URL | undefined {
 }
 
 /**
- * Copies query parameters and hash from the original URL onto the equivalent.
- * Parameters whose values were already used as rewrite captures (for example YouTube `v`)
- * are left off so they are not duplicated in the path and the query.
+ * Copies allowlisted query parameters and the hash from the original URL onto the equivalent.
+ * Parameters whose values were already used as rewrite captures (for example YouTube `v`) are
+ * omitted because they have moved into the path. Other parameters are returned for optional
+ * restoration by the caller.
  */
-function attachUnconsumedQueryAndHash(
+function attachPreservedQueryAndHash(
   sourceHref: string,
   rewritten: string,
-  captures: readonly (string | undefined)[]
-): string {
+  captures: readonly (string | undefined)[],
+  preserveQueryParams: readonly string[]
+): Pick<UrlRewriteResult, "url" | "droppedQueryParams"> {
   const source = parseAbsoluteUrl(sourceHref);
   const dest = parseAbsoluteUrl(rewritten);
-  if (!source || !dest) return rewritten;
+  if (!source || !dest) return { url: rewritten, droppedQueryParams: [] };
 
   const consumedValues = new Set(captures.filter((value): value is string => Boolean(value)));
+  const preservedKeys = new Set(preserveQueryParams);
+  const equivalentKeys = new Set(dest.searchParams.keys());
+  const droppedQueryParams: UrlQueryParameter[] = [];
   let attached = false;
 
   for (const [key, value] of source.searchParams) {
-    if (dest.searchParams.has(key) || consumedValues.has(value)) continue;
-    dest.searchParams.append(key, value);
-    attached = true;
+    if (equivalentKeys.has(key) || consumedValues.has(value)) continue;
+    if (preservedKeys.has(key)) {
+      dest.searchParams.append(key, value);
+      attached = true;
+    } else {
+      droppedQueryParams.push({ key, value });
+    }
   }
 
   if (source.hash && !dest.hash) {
@@ -159,7 +225,10 @@ function attachUnconsumedQueryAndHash(
     attached = true;
   }
 
-  return attached ? dest.toString() : rewritten;
+  return {
+    url: attached ? dest.toString() : rewritten,
+    droppedQueryParams
+  };
 }
 
 /**
@@ -179,15 +248,16 @@ export function rewriteUrl(
     for (const rule of rules) {
       const match = candidate.match(rule.pattern);
       if (!match) continue;
-      const url = attachUnconsumedQueryAndHash(
+      const result = attachPreservedQueryAndHash(
         candidate,
         applyEquivalent(rule.equivalent, match),
-        match.slice(1)
+        match.slice(1),
+        rule.preserveQueryParams ?? []
       );
-      if (url === input) continue;
-      return { url, rewritten: true };
+      if (result.url === input && result.droppedQueryParams.length === 0) continue;
+      return { ...result, rewritten: true };
     }
   }
 
-  return { url: input, rewritten: false };
+  return { url: input, rewritten: false, droppedQueryParams: [] };
 }
