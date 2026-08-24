@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.2.0...ha.mr-v1.2.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **urls:** selectively preserve functional query parameters ([6c33f68](https://github.com/TheGeeKing/ha.mr/commit/6c33f6867f7f8b6feeebafe204b13e9a546bef8a))
+
 ## [1.2.0](https://github.com/TheGeeKing/ha.mr/compare/ha.mr-v1.1.2...ha.mr-v1.2.0) (2026-08-23)
 
 
